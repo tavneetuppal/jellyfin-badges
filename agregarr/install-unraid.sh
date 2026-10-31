@@ -9,6 +9,8 @@
 #   ... | bash -s -- --revert                    stop any running sync, turn overlays off and restore original posters
 #                                               in every library that still has overlays enabled
 #   ... | bash -s -- --revert "Movies" "TV"      same, just for these libraries
+#   ... | bash -s -- --collections               preview removing Agregarr's collections (all libraries)
+#   ... | bash -s -- --collections --apply       remove them (add library names to limit it)
 # Overrides: AGREGARR_CONTAINER (default agregarr), AGREGARR_CONFIG (default /mnt/user/appdata/agregarr),
 #            AGREGARR_URL (default http://localhost:<port mapped by the container>)
 set -euo pipefail
@@ -32,6 +34,9 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --libraries) SCRIPT=libraries.sh ;;
     --apply) APPLY=1 ;;
+    --collections) SCRIPT=collections.sh; shift
+                   while [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; do LIBS="${LIBS:+$LIBS|}$1"; shift; done
+                   continue ;;
     --revert) SCRIPT=revert.sh; shift
               while [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; do LIBS="${LIBS:+$LIBS|}$1"; shift; done
               continue ;;

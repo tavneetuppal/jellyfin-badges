@@ -72,3 +72,15 @@ This:
 3. Runs Agregarr's own **reset library posters** job, which puts each item's saved original poster back.
 
 Libraries already handed to Kometa have nothing enabled, so they're skipped. Add library names (`--revert "Movies" "TV"`) to limit it to those.
+
+## Remove Agregarr's collections
+
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash -s -- --collections
+```
+
+That previews what would be removed. Add `--apply` to delete them, and library names to limit it to those libraries.
+
+- It stops a running collection sync first.
+- It uses Agregarr's own delete, which removes the Plex collections Agregarr created, their labels and any placeholder items.
+- Collections that existed in Plex before Agregarr are only unlinked; they stay in Plex.
