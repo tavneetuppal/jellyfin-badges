@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.3.0.0",
+        "changelog": "Release 1.3: Full HD/HD/SD badges, audio labels, editions, IMDb and Rotten Tomatoes ratings",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.3.0.0/poster-overlays_1.3.0.0.zip",
+        "checksum": "0dc9113495b337cf6210af7b05935bc3",
+        "timestamp": "2026-10-31T15:08:04Z"
+      },
+      {
         "version": "1.2.0.0",
         "changelog": "Pack badges without gaps and detect Atmos/DTS:X on any audio track",
         "targetAbi": "12.4.0.0",
