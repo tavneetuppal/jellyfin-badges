@@ -30,7 +30,7 @@ public class ApplyOverlaysTask : IScheduledTask
     public string Key => "PosterOverlaysApply";
 
     /// <inheritdoc />
-    public string Description => "Adds quality badges to movie posters. Only changed or new movies are re-drawn.";
+    public string Description => "Adds quality badges to movie posters. New and upgraded movies are handled automatically; this catches anything missed. Only changed or new movies are re-drawn.";
 
     /// <inheritdoc />
     public string Category => "Poster Overlays";

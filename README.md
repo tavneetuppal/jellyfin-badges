@@ -10,14 +10,15 @@ Badges come from [Agregarr](https://agregarr.org) overlay template exports, with
    URL: `https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/manifest.json`
 2. Catalog → **Poster Overlays** → Install, then restart Jellyfin.
 3. Dashboard → Plugins → Poster Overlays: pick templates. Optionally set a test-mode title filter.
-4. Dashboard → Scheduled Tasks → **Apply poster overlays** → Run. It also runs daily at 3am.
+4. Dashboard → Scheduled Tasks → **Apply poster overlays** → Run once for the whole library. After that, new and updated movies are handled automatically about 30 seconds after Jellyfin picks them up. A daily 3am run catches anything missed.
 
 Updates show up in Jellyfin's plugin page like any other plugin.
 
 ## How it works
 
 - The original poster is backed up once. Every render starts from the backup, so badges never stack.
-- Only new or changed movies get redrawn. Changes include a new file version, a changed template, or a poster replaced by a metadata refresh, which becomes the new original.
+- Only new or changed movies get redrawn. Changes include new media, a quality upgrade (e.g. 1080p → 4K, even if the file name changes), a changed template, or a poster replaced by a metadata refresh, which becomes the new original.
+- Overlaid posters carry a hidden marker. If Jellyfin reuses one for another item (e.g. an upgraded file re-using `poster.jpg`), the plugin draws from the clean backup, so badges never stack.
 - **Restore original posters** (Scheduled Tasks) puts every backup back. Disable the daily apply trigger first, or the badges come back on the next run.
 - Backups, state and custom templates live in `<jellyfin config>/plugins/configurations/PosterOverlays/`.
 

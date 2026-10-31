@@ -64,7 +64,26 @@ public class OverlayService
     /// <param name="progress">Progress (0-100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task.</returns>
-    public async Task ApplyAllAsync(IProgress<double> progress, CancellationToken cancellationToken)
+    public Task ApplyAllAsync(IProgress<double> progress, CancellationToken cancellationToken)
+        => ApplyAsync(Movies(), progress, true, cancellationToken);
+
+    /// <summary>
+    /// Applies matching templates to specific items (new or updated movies).
+    /// </summary>
+    /// <param name="itemIds">Item ids.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Task.</returns>
+    public Task ApplyItemsAsync(IEnumerable<Guid> itemIds, CancellationToken cancellationToken)
+    {
+        var items = itemIds
+            .Select(id => _libraryManager.GetItemById(id))
+            .Where(i => i is not null && i.GetBaseItemKind() == BaseItemKind.Movie && !i.IsVirtualItem)
+            .Select(i => i!)
+            .ToList();
+        return items.Count == 0 ? Task.CompletedTask : ApplyAsync(items, new Progress<double>(), false, cancellationToken);
+    }
+
+    private async Task ApplyAsync(List<BaseItem> movies, IProgress<double> progress, bool fullRun, CancellationToken cancellationToken)
     {
         await RunLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
@@ -72,14 +91,19 @@ public class OverlayService
             var config = Plugin.Instance!.Configuration;
             var disabled = new HashSet<string>(config.DisabledTemplates, StringComparer.OrdinalIgnoreCase);
             var templates = LoadTemplates().Where(t => !disabled.Contains(t.Name)).ToList();
-            _logger.LogInformation("Poster Overlays: {Count} active templates: {Names}", templates.Count, string.Join(", ", templates.Select(t => t.Name)));
+            if (fullRun)
+            {
+                _logger.LogInformation("Poster Overlays: {Count} active templates: {Names}", templates.Count, string.Join(", ", templates.Select(t => t.Name)));
+            }
 
             var state = LoadState();
-            var movies = Movies();
             if (!string.IsNullOrWhiteSpace(config.OnlyTitlesContaining))
             {
                 movies = movies.Where(m => m.Name?.Contains(config.OnlyTitlesContaining.Trim(), StringComparison.OrdinalIgnoreCase) == true).ToList();
-                _logger.LogInformation("Poster Overlays: test mode, only titles containing '{Filter}' ({Count} movies)", config.OnlyTitlesContaining, movies.Count);
+                if (fullRun)
+                {
+                    _logger.LogInformation("Poster Overlays: test mode, only titles containing '{Filter}' ({Count} movies)", config.OnlyTitlesContaining, movies.Count);
+                }
             }
 
             int done = 0, changed = 0, failed = 0;
@@ -104,7 +128,10 @@ public class OverlayService
             }
 
             SaveState(state);
-            _logger.LogInformation("Poster Overlays: {Changed} posters updated, {Failed} failed, {Total} movies checked", changed, failed, movies.Count);
+            if (fullRun || changed > 0 || failed > 0)
+            {
+                _logger.LogInformation("Poster Overlays: {Changed} posters updated, {Failed} failed, {Total} movies checked", changed, failed, movies.Count);
+            }
         }
         finally
         {
@@ -181,16 +208,32 @@ public class OverlayService
 
         if (st is null || replacedOutside)
         {
-            if (hits.Count == 0)
+            // New poster for this item. If it's one the plugin drew (e.g. an upgraded file that became a new item
+            // and picked up poster.jpg from the media folder), keep using the clean backup it came from.
+            var marker = JpegMarker.Read(info.Path);
+            string original;
+            if (marker is not null)
             {
-                // Nothing to draw and the current poster is a clean original.
+                if (!File.Exists(Path.Combine(OriginalsPath, marker)))
+                {
+                    _logger.LogWarning("Poster Overlays: {Name} already has overlays but its original backup {Backup} is missing; skipped. Refresh its images to get a clean poster.", item.Name, marker);
+                    return false;
+                }
+
+                original = marker;
+            }
+            else if (hits.Count == 0)
+            {
+                // Clean poster and nothing to draw.
                 return state.Remove(id);
             }
+            else
+            {
+                var ext = Path.GetExtension(info.Path).ToLowerInvariant();
+                original = id + (string.IsNullOrEmpty(ext) ? ".jpg" : ext);
+                File.Copy(info.Path, Path.Combine(OriginalsPath, original), true);
+            }
 
-            // Current poster is the original: back it up.
-            var ext = Path.GetExtension(info.Path).ToLowerInvariant();
-            var original = id + (string.IsNullOrEmpty(ext) ? ".jpg" : ext);
-            File.Copy(info.Path, Path.Combine(OriginalsPath, original), true);
             st = new ItemState { Original = original };
             state[id] = st;
         }
@@ -205,7 +248,7 @@ public class OverlayService
             return true;
         }
 
-        var jpeg = OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, quality, _logger);
+        var jpeg = JpegMarker.Add(OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, quality, _logger), st.Original!);
         await SaveAsync(item, jpeg, "image/jpeg", ct).ConfigureAwait(false);
         st.Signature = signature;
         st.ImageTicks = item.GetImageInfo(ImageType.Primary, 0)?.DateModified.Ticks ?? 0;

@@ -75,6 +75,29 @@ public class OverlayTests
         Assert.True(bmp.GetPixel(100, 25).Red < SKBitmap.Decode(Gradient(680, 1000)).GetPixel(100, 25).Red);
     }
 
+    [Fact]
+    public void MarkerRoundTripsAndKeepsJpegValid()
+    {
+        var jpeg = OverlayRenderer.Render(Gradient(300, 450), Templates.Where(t => t.Name == "4K").ToList(), 92, NullLogger.Instance);
+        Assert.Null(JpegMarker.Read(jpeg));
+
+        var marked = JpegMarker.Add(jpeg, "abc123.jpg");
+        Assert.Equal("abc123.jpg", JpegMarker.Read(marked));
+        using var bmp = SKBitmap.Decode(marked);
+        Assert.Equal(300, bmp.Width);
+
+        var path = Path.Combine(OutDir, "marked.jpg");
+        File.WriteAllBytes(path, marked);
+        Assert.Equal("abc123.jpg", JpegMarker.Read(path));
+    }
+
+    [Fact]
+    public void MarkerIgnoresOtherImagesAndPathTricks()
+    {
+        Assert.Null(JpegMarker.Read(new byte[] { 0x89, 0x50, 0x4E, 0x47 }));
+        Assert.Equal("x.jpg", JpegMarker.Read(JpegMarker.Add(Gradient(10, 10), "../../x.jpg")));
+    }
+
     private static string OutDir => Directory.CreateDirectory(Path.Combine(Path.GetTempPath(), "poster-overlay-tests")).FullName;
 
     private static byte[] Gradient(int w, int h)
