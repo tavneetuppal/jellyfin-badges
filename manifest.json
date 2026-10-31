@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.1.0.0",
+        "changelog": "Auto-apply overlays to new and upgraded movies within 30 seconds",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.1.0.0/poster-overlays_1.1.0.0.zip",
+        "checksum": "c58edd8ba40760c8cd4292519d05d376",
+        "timestamp": "2026-10-31T03:32:15Z"
+      },
+      {
         "version": "1.0.0.0",
         "changelog": "First release: Agregarr templates, poster backup/restore, settings page",
         "targetAbi": "12.4.0.0",
