@@ -19,4 +19,14 @@ Layout:
 - Audio is bottom-left.
 - Ratings are bottom-right.
 
-Each icon has its width and height set to its template element size, with a `0 0` viewBox. Agregarr draws imported icons at the SVG's own size, so the two have to match.
+## Install
+
+1. Copy the logos into Agregarr's icons folder (Unraid):
+
+   ```bash
+   curl -sL https://github.com/tavneetuppal/jellyfin-badges/archive/refs/heads/main.tar.gz | tar -xz -C /tmp jellyfin-badges-main/agregarr/out/icons && cp /tmp/jellyfin-badges-main/agregarr/out/icons/*.svg /mnt/user/appdata/agregarr/icons/
+   ```
+
+2. Import the `Badges_*.zip` templates from `out/`.
+
+The logos are not inside the zips. Agregarr's importer rewrites a template's icon reference to an internal ID that its renderer can't load, so imported logos come out blank. These templates point at `/api/v1/posters/icons/user/Badges_<name>.svg` instead. Agregarr serves those files straight from its icons folder and lists them in the icon picker.

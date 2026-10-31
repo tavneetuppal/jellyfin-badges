@@ -1,11 +1,11 @@
 """Builds the Agregarr template pack in ./out from the Agregarr exports in ./src and the logos in ../Jellyfin.Plugin.PosterOverlays.
 
-Every icon is normalized (viewBox from 0 0, width/height equal to the element's size) and gets a fresh id, because
-Agregarr draws imported icons at the SVG's own size and puts icons with an offset viewBox off-canvas.
+Every icon is normalized (viewBox from 0 0, width/height equal to the element's size) and written to out/icons with a
+readable Badges_ name; see write() for why icons are installed by copying rather than through the importer.
 
     python3 build.py
 """
-import copy, datetime, json, re, shutil, uuid, zipfile
+import copy, datetime, json, re, shutil, zipfile
 from pathlib import Path
 
 HERE = Path(__file__).parent
@@ -44,22 +44,24 @@ def read(path):
 
 
 def write(fname, t, icons):
-    """Re-ids and normalizes every icon, then writes an importable zip. Everything is prefixed Badges_ so it groups in Agregarr."""
+    """Writes an importable zip (prefixed Badges_) plus its icon as out/icons/Badges_<name>.svg.
+
+    Icons are NOT put in the zip: Agregarr's importer replaces iconPath with the new icon's metadata id, which its
+    renderer can't load. Instead the zip points at /api/v1/posters/icons/user/Badges_<name>.svg and the icon files are
+    copied into Agregarr's icons folder, which serves files by name and adds them to the icon list on its own.
+    """
     t = copy.deepcopy(t)
     t["name"] = "Badges_" + t["name"]
     fname = "Badges_" + fname
-    files = {}
     for e in t["templateData"]["elements"]:
         if e["type"] == "svg":
             old = Path(e["properties"]["iconPath"]).name
-            new = f"{uuid.uuid4()}.svg"
+            new = fname.replace("_overlay_template.zip", ".svg")
             e["properties"]["iconPath"] = f"/api/v1/posters/icons/user/{new}"
-            files[f"assets/icons/{new}"] = normalize(icons[old], round(e["width"], 2), round(e["height"], 2))
+            (OUT / "icons" / new).write_bytes(normalize(icons[old], round(e["width"], 2), round(e["height"], 2)))
     t["exportedAt"], t["version"] = NOW, "1.0"
     with zipfile.ZipFile(OUT / fname, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("template.json", json.dumps(t, indent=2))
-        for n, d in files.items():
-            z.writestr(n, d)
     return fname
 
 
@@ -102,7 +104,7 @@ def text_w(s, size, bold):
 
 def main():
     shutil.rmtree(OUT, ignore_errors=True)
-    OUT.mkdir()
+    (OUT / "icons").mkdir(parents=True)
     built = []
     src = {re.sub(r"^[0-9a-f]{8}-", "", p.name): p for p in SRC.glob("*.zip")}
 
