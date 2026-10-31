@@ -2,6 +2,8 @@
 # One-shot install/update of the Badges_ templates into Agregarr on Unraid. Safe to re-run after every change:
 # existing Badges_ templates are updated in place (library assignments are kept), new ones are created.
 #   curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash
+#   ... | bash -s -- --libraries           preview turning the badges on in every movie library
+#   ... | bash -s -- --libraries --apply   do it
 # Overrides: AGREGARR_CONTAINER (default agregarr), AGREGARR_CONFIG (default /mnt/user/appdata/agregarr),
 #            AGREGARR_URL (default http://localhost:<port mapped by the container>)
 set -euo pipefail
@@ -20,7 +22,16 @@ if [ -z "${AGREGARR_URL:-}" ]; then
 fi
 echo "Agregarr: $AGREGARR_URL   config: $CONFIG"
 
+SCRIPT=sync.sh APPLY=0
+for arg in "$@"; do
+  case "$arg" in
+    --libraries) SCRIPT=libraries.sh ;;
+    --apply) APPLY=1 ;;
+    *) echo "Unknown option: $arg"; exit 1 ;;
+  esac
+done
+
 docker run --rm --network host \
-  -e PACK=/pack -e CONFIG=/config -e URL="$AGREGARR_URL" \
+  -e PACK=/pack -e CONFIG=/config -e URL="$AGREGARR_URL" -e APPLY="$APPLY" \
   -v "$TMP/jellyfin-badges-main/agregarr":/pack:ro -v "$CONFIG":/config \
-  alpine sh /pack/sync.sh
+  alpine sh "/pack/$SCRIPT"

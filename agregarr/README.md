@@ -31,7 +31,15 @@ The script does three things:
 - updates any `Badges_` template that already exists, in place, so library assignments are kept
 - creates the rest through Agregarr's API, using the API key from `settings.json`
 
-It is safe to re-run after every change. Rebuild the templates with `python3 build.py`.
+To turn the badges on in every movie library, add `--libraries`. That previews the change; add `--apply` as well to save it:
+
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash -s -- --libraries --apply
+```
+
+This turns on all `Badges_` templates and turns off the old templates they replace (4K, BluRay, DoVi, HDR10, IMAX, Atmos, DTS, built-in IMDb/RT ratings). Any other overlays are left as they are. TV libraries aren't touched.
+
+The install is safe to re-run after every change. Rebuild the templates with `python3 build.py`.
 
 Why not the import button:
 
