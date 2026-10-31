@@ -24,6 +24,18 @@ public static class OverlayRenderer
     /// <param name="logger">Logger.</param>
     /// <returns>Encoded JPEG.</returns>
     public static byte[] Render(byte[] poster, IReadOnlyList<OverlayTemplate> templates, int jpegQuality, ILogger logger)
+        => Render(poster, templates, [], jpegQuality, logger);
+
+    /// <summary>
+    /// Renders templates and built-in badges onto a poster.
+    /// </summary>
+    /// <param name="poster">Encoded source poster.</param>
+    /// <param name="templates">Templates to draw, in order.</param>
+    /// <param name="extras">Built-in badges (audio label, edition, ratings).</param>
+    /// <param name="jpegQuality">JPEG quality.</param>
+    /// <param name="logger">Logger.</param>
+    /// <returns>Encoded JPEG.</returns>
+    public static byte[] Render(byte[] poster, IReadOnlyList<OverlayTemplate> templates, IReadOnlyList<ExtraBadge> extras, int jpegQuality, ILogger logger)
     {
         using var decoded = SKBitmap.Decode(poster) ?? throw new InvalidDataException("Poster could not be decoded");
         using var bitmap = new SKBitmap(new SKImageInfo(decoded.Width, decoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
@@ -34,6 +46,11 @@ public static class OverlayRenderer
             foreach (var t in templates)
             {
                 Draw(canvas, bitmap.Width, bitmap.Height, t, offsets[t], logger);
+            }
+
+            if (extras.Count > 0)
+            {
+                ExtraBadgeRenderer.Draw(canvas, bitmap.Width, bitmap.Height, extras, RowExtents(templates, offsets));
             }
 
             canvas.Flush();
@@ -68,8 +85,40 @@ public static class OverlayRenderer
         return offsets;
     }
 
-    // Gap between badges, in template units (matches the spacing in the Agregarr designs).
-    private const double BadgeGap = 9;
+    /// <summary>
+    /// Gap between badges, in template units (matches the spacing in the Agregarr designs).
+    /// </summary>
+    internal const double BadgeGap = 9;
+
+    /// <summary>
+    /// Where the template rows end after packing, so built-in badges can be placed around them.
+    /// </summary>
+    /// <param name="templates">Templates being drawn.</param>
+    /// <param name="offsets">Offsets from <see cref="PackRows"/>.</param>
+    /// <returns>Whether the top row has badges, and the right edge of the bottom row (template units, 0 when empty).</returns>
+    internal static (bool TopRow, double BottomRight) RowExtents(IReadOnlyList<OverlayTemplate> templates, Dictionary<OverlayTemplate, double> offsets)
+    {
+        bool top = false;
+        double bottomRight = 0;
+        foreach (var t in templates)
+        {
+            if (AnchorBox(t) is not { } b)
+            {
+                continue;
+            }
+
+            if (b.MidY < b.CanvasHeight / 2)
+            {
+                top = true;
+            }
+            else
+            {
+                bottomRight = Math.Max(bottomRight, b.X + offsets[t] + b.Width);
+            }
+        }
+
+        return (top, bottomRight);
+    }
 
     // The badge's background tile defines its footprint; icons can overhang (transparent padding in the SVG).
     private static (double X, double Width, double MidY, double CanvasHeight)? AnchorBox(OverlayTemplate t)

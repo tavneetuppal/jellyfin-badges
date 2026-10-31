@@ -21,4 +21,24 @@ public class PluginConfiguration : BasePluginConfiguration
     /// Gets or sets a title filter for trying the plugin out: when set, only movies whose title contains this text are processed.
     /// </summary>
     public string OnlyTitlesContaining { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether movies without an Atmos/DTS badge get an audio label (e.g. "DOLBY | TrueHD 7.1").
+    /// </summary>
+    public bool ShowAudioLabel { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the edition (Director's Cut, Extended...) from the file name is shown under the top row.
+    /// </summary>
+    public bool ShowEdition { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the IMDb (community) rating is shown bottom-right.
+    /// </summary>
+    public bool ShowImdbRating { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Rotten Tomatoes (critic) rating is shown bottom-right.
+    /// </summary>
+    public bool ShowRottenTomatoes { get; set; } = true;
 }

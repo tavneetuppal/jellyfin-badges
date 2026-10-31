@@ -24,8 +24,8 @@ public class OverlayService
     private static readonly SemaphoreSlim RunLock = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    // Bump when drawing changes so existing posters get redrawn. 2 = badges packed left without gaps.
-    private const string LayoutVersion = "L2";
+    // Bump when drawing changes so existing posters get redrawn. 2 = badges packed left without gaps, 3 = built-in badges.
+    private const string LayoutVersion = "L3";
 
     private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
@@ -200,7 +200,9 @@ public class OverlayService
         var id = item.Id.ToString("N");
         var facts = MediaFacts.For(item);
         var hits = templates.Where(t => MediaFacts.Matches(t, facts, _logger)).ToList();
-        var signature = LayoutVersion + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash));
+        var extras = ExtraBadges.For(item, hits, Plugin.Instance!.Configuration);
+        var nothingToDraw = hits.Count == 0 && extras.Count == 0;
+        var signature = LayoutVersion + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash).Concat(extras.Select(e => e.Key)));
 
         state.TryGetValue(id, out var st);
         var replacedOutside = st is not null && st.ImageTicks != info.DateModified.Ticks;
@@ -225,7 +227,7 @@ public class OverlayService
 
                 original = marker;
             }
-            else if (hits.Count == 0)
+            else if (nothingToDraw)
             {
                 // Clean poster and nothing to draw.
                 return state.Remove(id);
@@ -242,7 +244,7 @@ public class OverlayService
         }
 
         var originalPath = Path.Combine(OriginalsPath, st.Original!);
-        if (hits.Count == 0)
+        if (nothingToDraw)
         {
             // Item no longer matches anything (template disabled/removed or file upgraded): put the original back.
             await SaveAsync(item, File.ReadAllBytes(originalPath), MimeFor(st.Original!), ct).ConfigureAwait(false);
@@ -251,11 +253,11 @@ public class OverlayService
             return true;
         }
 
-        var jpeg = JpegMarker.Add(OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, quality, _logger), st.Original!);
+        var jpeg = JpegMarker.Add(OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, extras, quality, _logger), st.Original!);
         await SaveAsync(item, jpeg, "image/jpeg", ct).ConfigureAwait(false);
         st.Signature = signature;
         st.ImageTicks = item.GetImageInfo(ImageType.Primary, 0)?.DateModified.Ticks ?? 0;
-        _logger.LogInformation("Poster Overlays: {Name} -> {Templates}", item.Name, string.Join(", ", hits.Select(t => t.Name)));
+        _logger.LogInformation("Poster Overlays: {Name} -> {Templates}", item.Name, string.Join(", ", hits.Select(t => t.Name).Concat(extras.Select(e => e.Kind + " " + e.Text))));
         return true;
     }
 

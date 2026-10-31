@@ -26,6 +26,26 @@
                         </div>
                     </div>
 
+                    <div class="verticalSection">
+                        <h3 class="sectionTitle">Built-in badges</h3>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="ShowAudioLabel" /><span>Audio label</span></label>
+                            <div class="fieldDescription checkboxFieldDescription">Bottom-left, e.g. "DOLBY | TrueHD 7.1", for movies without an Atmos / DTS badge.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="ShowEdition" /><span>Edition</span></label>
+                            <div class="fieldDescription checkboxFieldDescription">Under the top row, from the file name: <code>{edition-Director's Cut}</code> or words like Extended, Unrated, Criterion after the year.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="ShowImdbRating" /><span>IMDb rating</span></label>
+                            <div class="fieldDescription checkboxFieldDescription">Bottom-right. Uses the community rating shown on the movie page.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="ShowRottenTomatoes" /><span>Rotten Tomatoes rating</span></label>
+                            <div class="fieldDescription checkboxFieldDescription">Bottom-right. Uses the critic rating; fresh tomato at 60% or more.</div>
+                        </div>
+                    </div>
+
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="OnlyTitlesContaining">Test mode: only titles containing</label>
                         <input id="OnlyTitlesContaining" name="OnlyTitlesContaining" type="text" is="emby-input" />
@@ -67,6 +87,9 @@
                         var disabled = (config.DisabledTemplates || []).map(function (n) { return n.toLowerCase(); });
                         page.querySelector('#JpegQuality').value = config.JpegQuality || 92;
                         page.querySelector('#OnlyTitlesContaining').value = config.OnlyTitlesContaining || '';
+                        ['ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
+                            page.querySelector('#' + k).checked = config[k] !== false;
+                        });
                         page.querySelector('#customFolder').textContent = info.CustomFolder;
                         page.querySelector('#templateList').innerHTML = info.Templates.map(function (t) {
                             var checked = disabled.indexOf(t.Name.toLowerCase()) === -1 ? ' checked' : '';
@@ -93,6 +116,9 @@
                         var q = parseInt(page.querySelector('#JpegQuality').value, 10);
                         config.JpegQuality = isNaN(q) ? 92 : Math.min(100, Math.max(50, q));
                         config.OnlyTitlesContaining = page.querySelector('#OnlyTitlesContaining').value.trim();
+                        ['ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
+                            config[k] = page.querySelector('#' + k).checked;
+                        });
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                         });
