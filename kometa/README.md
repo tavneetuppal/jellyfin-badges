@@ -49,3 +49,15 @@ The same badges as the Jellyfin plugin, built for Kometa (Plex). `python3 build.
 - Top-row badges are all 304 wide, because Kometa queues place badges at fixed steps.
 - Atmos and DTS:X can only be read from the audio track title or the file name, because Plex doesn't report them as separate codecs. A TrueHD Atmos track whose name doesn't mention Atmos shows `DOLBY | TrueHD 7.1`.
 - The overlay file passes Kometa's own `overlay-schema.json`.
+
+## All libraries + default collections
+
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/kometa/setup-libraries.sh | bash
+```
+
+This adds every Plex movie and TV library missing from `config.yml`, with the badge overlays. It also gives every library that has no `collection_files` the default `tmdb` collections (Trending, Popular, Top Rated) and `universe` collections (MCU, Star Wars, ...).
+
+- It's safe to re-run: it only adds what's missing.
+- It backs up `config.yml` first.
+- To leave collections out of some libraries, set `SKIP_COLLECTIONS="Movies 4K/HDR|TV 4K/HDR"` before `bash`.
