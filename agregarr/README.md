@@ -58,3 +58,17 @@ For each named library this:
 2. Runs the library once. Agregarr resets every poster it overlaid to its saved original, but only when nothing matches.
 3. Waits for that run to finish.
 4. Leaves the library with nothing enabled, so Agregarr skips it from then on. Its templates stay in the list, unticked.
+
+## Stop Agregarr and restore original posters
+
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash -s -- --revert
+```
+
+This:
+
+1. Cancels any running overlay sync and waits until nothing is running.
+2. In every library that still has overlays enabled, turns them off.
+3. Runs Agregarr's own **reset library posters** job, which puts each item's saved original poster back.
+
+Libraries already handed to Kometa have nothing enabled, so they're skipped. Add library names (`--revert "Movies" "TV"`) to limit it to those.

@@ -6,6 +6,9 @@
 #   ... | bash -s -- --libraries --apply   do it
 #   ... | bash -s -- --handoff "Movies 4K/HDR" "TV 4K/HDR"   restore clean posters and stop Agregarr in those libraries
 #                                                           (before switching them to Kometa)
+#   ... | bash -s -- --revert                    stop any running sync, turn overlays off and restore original posters
+#                                               in every library that still has overlays enabled
+#   ... | bash -s -- --revert "Movies" "TV"      same, just for these libraries
 # Overrides: AGREGARR_CONTAINER (default agregarr), AGREGARR_CONFIG (default /mnt/user/appdata/agregarr),
 #            AGREGARR_URL (default http://localhost:<port mapped by the container>)
 set -euo pipefail
@@ -29,6 +32,9 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --libraries) SCRIPT=libraries.sh ;;
     --apply) APPLY=1 ;;
+    --revert) SCRIPT=revert.sh; shift
+              while [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; do LIBS="${LIBS:+$LIBS|}$1"; shift; done
+              continue ;;
     --handoff) SCRIPT=handoff.sh; shift
                while [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; do LIBS="${LIBS:+$LIBS|}$1"; shift; done
                [ -n "$LIBS" ] || { echo "--handoff needs library names, e.g. --handoff \"Movies 4K/HDR\""; exit 1; }
