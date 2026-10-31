@@ -1,9 +1,12 @@
 name: Release
 
-# Push a tag like v1.0.1 to build the plugin, publish a GitHub release and add it to manifest.json.
+# Bump VERSION (e.g. 1.0.1.0) and push to main: builds the plugin, publishes release v<VERSION>
+# and adds it to manifest.json. The commit message becomes the changelog.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: [VERSION]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,17 +24,23 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Version from tag
+      - name: Version
         id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${GITHUB_REF_NAME#v}"
-          IFS=. read -r a b c d <<< "$tag"
-          echo "version=${a:-0}.${b:-0}.${c:-0}.${d:-0}" >> "$GITHUB_OUTPUT"
+          IFS=. read -r a b c d < VERSION
+          version="${a:-0}.${b:-0}.${c:-0}.${d:-0}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if gh release view "v$version" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; fi
 
       - name: Test
+        if: steps.v.outputs.exists != 'true'
         run: dotnet test tests/PosterOverlays.Tests -c Release
 
       - name: Build
+        if: steps.v.outputs.exists != 'true'
         run: |
           dotnet publish Jellyfin.Plugin.PosterOverlays -c Release -o out \
             -p:Version=${{ steps.v.outputs.version }} \
@@ -40,14 +49,17 @@ jobs:
           zip -j "poster-overlays_${{ steps.v.outputs.version }}.zip" out/Jellyfin.Plugin.PosterOverlays.dll
 
       - name: Publish release
+        if: steps.v.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "poster-overlays_${{ steps.v.outputs.version }}.zip" \
-            --title "$GITHUB_REF_NAME" --generate-notes
+          gh release create "${{ steps.v.outputs.tag }}" "poster-overlays_${{ steps.v.outputs.version }}.zip" \
+            --target "$GITHUB_SHA" --title "${{ steps.v.outputs.tag }}" --notes "$(git log -1 --format=%s)"
 
       - name: Update manifest.json
+        if: steps.v.outputs.exists != 'true'
         env:
+          TAG: ${{ steps.v.outputs.tag }}
           VERSION: ${{ steps.v.outputs.version }}
           ZIP: poster-overlays_${{ steps.v.outputs.version }}.zip
         run: |

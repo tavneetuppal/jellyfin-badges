@@ -2,9 +2,8 @@
 import datetime, hashlib, json, os, subprocess
 
 version, zip_name = os.environ["VERSION"], os.environ["ZIP"]
-repo, tag = os.environ["GITHUB_REPOSITORY"], os.environ["GITHUB_REF_NAME"]
-notes = subprocess.run(["git", "tag", "-l", "--format=%(contents:subject)", tag],
-                       capture_output=True, text=True).stdout.strip()
+repo, tag = os.environ["GITHUB_REPOSITORY"], os.environ["TAG"]
+notes = subprocess.run(["git", "log", "-1", "--format=%s"], capture_output=True, text=True).stdout.strip()
 
 with open("manifest.json") as f:
     manifest = json.load(f)
