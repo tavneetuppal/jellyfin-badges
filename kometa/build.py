@@ -115,7 +115,8 @@ def main():
 
     all_items = {"plex_all": True}
 
-    # Top row: resolution (weight 300) -> DV / HDR10 (200) -> IMAX (100). All 304 wide so the queue has no gaps.
+    # Top row: resolution (weight 300) -> DV / HDR10 (200) -> IMAX (100). Queue slots are 304 + gap apart, so
+    # everything that can be followed by another badge is 304 wide; IMAX is always last and keeps its own width.
     for key, tpl, flt in [
         ("Badges 4K", "4K", {"resolution.regex": r"(?i)^(4k|2160)"}),
         ("Badges BluRay", "BluRay", {"resolution.regex": r"(?i)^(1080|2k)", "filepath.regex": f"(?i){BLURAY}"}),
@@ -128,7 +129,7 @@ def main():
                   all_items, {"has_dolby_vision": True}, weight=200, **top)
     image_overlay("Badges HDR10", save(from_agregarr("HDR10_Top_Left", TOP_W), "Badges_HDR10"),
                   {"plex_search": {"all": {"hdr": True}}}, {"has_dolby_vision": False}, weight=200, **top)
-    image_overlay("Badges IMAX", save(from_agregarr("IMAX_no_HDR", TOP_W), "Badges_IMAX"),
+    image_overlay("Badges IMAX", save(from_agregarr("IMAX_no_HDR"), "Badges_IMAX"),
                   all_items, {"filepath.regex": r"(?i)\bimax\b"}, weight=100, **top)
 
     # Edition: under the top row. Known editions get an upper-case label; anything else shows Plex's edition text.
