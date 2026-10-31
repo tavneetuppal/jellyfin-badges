@@ -1,6 +1,6 @@
 bin/
 obj/
-out/
+/out/
 *.zip
 !Jellyfin.Plugin.PosterOverlays/Templates/*.zip
 !agregarr/**/*.zip
