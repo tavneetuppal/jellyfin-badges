@@ -30,5 +30,3 @@ Supported condition fields: `resolution` (`4k`, `1080`, `720`, `sd`), `dolbyVisi
 ## Release
 
 Bump `VERSION` (e.g. `1.0.1.0`) and push to `main`. GitHub Actions tests and builds the plugin, publishes the release and updates `manifest.json`.
-
-`legacy/` holds the earlier Python script. It's only needed to restore posters it changed.

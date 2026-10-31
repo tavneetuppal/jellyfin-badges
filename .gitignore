@@ -3,5 +3,3 @@ obj/
 out/
 *.zip
 !Jellyfin.Plugin.PosterOverlays/Templates/*.zip
-legacy/config.env
-legacy/data/
