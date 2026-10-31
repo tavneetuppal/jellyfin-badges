@@ -147,7 +147,7 @@ def main():
     overlays["Badges Edition (other)"] = {
         "overlay": {"name": "text(<<edition>>)", "font": "fonts/Inter-Bold.ttf", "font_size": 24, "font_color": "#FFFFFF",
                     "back_color": "#00000059", "back_radius": 15, "back_padding": 10, "weight": 1, **ed_pos},
-        "plex_all": True, "filters": {"has_edition": True}}
+        "plex_all": True, "filters": {"has_edition": True, "edition.regex": r"(?i)^(?!.*\bimax\b)"}}  # IMAX has its own badge
 
     # Audio: one badge bottom-left, best match wins (group). Logos first, then codec labels from Plex's stream info.
     au_pos = {"group": "badges_audio", "horizontal_align": "left", "vertical_align": "bottom", "horizontal_offset": 11, "vertical_offset": 17}

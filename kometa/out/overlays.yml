@@ -401,6 +401,7 @@ overlays:
     plex_all: true
     filters:
       has_edition: true
+      edition.regex: (?i)^(?!.*\bimax\b)
   Badges Dolby Atmos (track title):
     overlay:
       name: Badges Dolby Atmos (track title)
