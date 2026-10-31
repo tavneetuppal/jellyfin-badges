@@ -51,6 +51,7 @@ public static class MediaFacts
             ["atmos"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DolbyAtmos),
             ["dtsX"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DTSX),
             ["dtsHdMa"] = audios.Any(a => a.Profile?.Contains("DTS-HD MA", StringComparison.OrdinalIgnoreCase) == true),
+            ["source"] = BadgeInfo.Source(item.Path),
             ["filePath"] = item.Path ?? string.Empty,
             ["title"] = item.Name ?? string.Empty,
             ["year"] = item.ProductionYear ?? 0,

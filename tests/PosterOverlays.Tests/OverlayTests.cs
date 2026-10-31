@@ -15,12 +15,12 @@ public class OverlayTests
         OverlayTemplate.LoadAll(Path.Combine(Path.GetTempPath(), "no-custom-templates"), NullLogger.Instance);
 
     private static Dictionary<string, object> Facts(string res, bool dv, bool hdr, string codec, int ch, string path,
-        bool atmos = false, bool dtsX = false, bool dtsHdMa = false) => new()
+        bool atmos = false, bool dtsX = false, bool dtsHdMa = false, string source = "bluray") => new()
     {
         ["resolution"] = res, ["dolbyVision"] = dv, ["hdr"] = hdr, ["hdr10Plus"] = false,
         ["videoCodec"] = "hevc", ["audioCodec"] = codec, ["audioChannels"] = ch,
         ["atmos"] = atmos, ["dtsX"] = dtsX, ["dtsHdMa"] = dtsHdMa,
-        ["filePath"] = path, ["title"] = "x", ["year"] = 2019,
+        ["source"] = source, ["filePath"] = path, ["title"] = "x", ["year"] = 2019,
     };
 
     private static string[] Hits(Dictionary<string, object> f) =>
@@ -30,7 +30,7 @@ public class OverlayTests
     public void LoadsAllBuiltInTemplates()
     {
         Assert.Equal(
-            new[] { "4K", "BluRay", "Dolby Atmos", "DoVi Top Left", "DTS HD MA", "DTS X", "HDR10 Top Left", "IMAX" }.OrderBy(n => n),
+            new[] { "1080p Full HD", "4K", "720p HD", "BluRay", "Dolby Atmos", "DoVi Top Left", "DTS HD MA", "DTS X", "HDR10 Top Left", "IMAX", "SD" }.OrderBy(n => n),
             Templates.Select(t => t.Name).OrderBy(n => n));
         Assert.All(Templates, t => Assert.NotEmpty(t.Icons));
     }
@@ -74,8 +74,20 @@ public class OverlayTests
     }
 
     [Fact]
-    public void PlainSdMatchesNothing()
-        => Assert.Empty(Hits(Facts("sd", false, false, "aac", 2, "/m/x.mkv")));
+    public void PlainSdGetsSdBadge()
+        => Assert.Equal(new[] { "SD" }, Hits(Facts("sd", false, false, "aac", 2, "/m/x.mkv", source: "dvd")));
+
+    [Theory]
+    [InlineData("bluray", "BluRay")]
+    [InlineData("web", "1080p Full HD")]
+    [InlineData("hdtv", "1080p Full HD")]
+    [InlineData("unknown", "1080p Full HD")]
+    public void BluRayOnlyForRealBluRaySources(string source, string expected)
+        => Assert.Equal(new[] { expected }, Hits(Facts("1080", false, false, "aac", 2, "/m/x.mkv", source: source)));
+
+    [Fact]
+    public void SevenTwentyGetsHdBadge()
+        => Assert.Equal(new[] { "720p HD" }, Hits(Facts("720", false, false, "aac", 2, "/m/x.mkv", source: "bluray")));
 
     [Fact]
     public void RendersEveryTemplateWithoutErrors()

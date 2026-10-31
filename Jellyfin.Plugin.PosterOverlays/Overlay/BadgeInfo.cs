@@ -75,6 +75,26 @@ public static partial class BadgeInfo
     }
 
     /// <summary>
+    /// Finds the release source from the file or folder name (e.g. Radarr's "Bluray-1080p", "WEBDL-1080p", "Remux-2160p").
+    /// </summary>
+    /// <param name="path">Media file path.</param>
+    /// <returns>"bluray", "web", "hdtv", "dvd" or "unknown".</returns>
+    public static string Source(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return "unknown";
+        }
+
+        var names = Path.GetFileNameWithoutExtension(path) + " " + (Path.GetFileName(Path.GetDirectoryName(path)) ?? string.Empty);
+        return BluRaySource().IsMatch(names) ? "bluray"
+            : WebSource().IsMatch(names) ? "web"
+            : HdtvSource().IsMatch(names) ? "hdtv"
+            : DvdSource().IsMatch(names) ? "dvd"
+            : "unknown";
+    }
+
+    /// <summary>
     /// Builds the audio label for the best audio track, e.g. ("DOLBY", "TrueHD 7.1").
     /// </summary>
     /// <param name="streams">Item media streams.</param>
@@ -167,4 +187,17 @@ public static partial class BadgeInfo
 
     [GeneratedRegex(@"(?<![0-9])(19|20)[0-9]{2}(?![0-9])")]
     private static partial Regex Year();
+
+    // Tokens are matched between non-alphanumerics so "Movie_BluRay_1080p" and "Bluray-1080p" both work.
+    [GeneratedRegex(@"(?<![a-z0-9])(blu-?ray|bdremux|bdrip|brrip|bd25|bd50|bdmv|remux)(?![a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex BluRaySource();
+
+    [GeneratedRegex(@"(?<![a-z0-9])(web-?dl|webrip|web)(?![a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex WebSource();
+
+    [GeneratedRegex(@"(?<![a-z0-9])(hdtv|pdtv|dsr)(?![a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex HdtvSource();
+
+    [GeneratedRegex(@"(?<![a-z0-9])(dvdrip|dvd5|dvd9|dvd)(?![a-z0-9])", RegexOptions.IgnoreCase)]
+    private static partial Regex DvdSource();
 }

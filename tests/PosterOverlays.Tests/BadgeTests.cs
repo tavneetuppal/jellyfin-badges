@@ -29,6 +29,20 @@ public class BadgeTests
     [InlineData("/m/Heat (1995)/Heat (1995).mkv", null)]
     public void Editions(string path, string? expected) => Assert.Equal(expected, BadgeInfo.Edition(path));
 
+    [Theory]
+    [InlineData("/m/The Batman (2022)/The Batman (2022) Bluray-1080p.mkv", "bluray")]
+    [InlineData("/m/x/Heat.1995.1080p.BluRay.x264-GRP.mkv", "bluray")]
+    [InlineData("/m/x/Heat (1995) Remux-1080p.mkv", "bluray")]
+    [InlineData("/m/x/Heat_1995_BDRip_1080p.mkv", "bluray")]
+    [InlineData("/m/x/Heat (1995) WEBDL-1080p.mkv", "web")]
+    [InlineData("/m/x/Heat.1995.1080p.AMZN.WEB-DL.DDP5.1.mkv", "web")]
+    [InlineData("/m/x/Heat.1995.1080p.WEBRip.mkv", "web")]
+    [InlineData("/m/x/Heat (1995) HDTV-720p.mkv", "hdtv")]
+    [InlineData("/m/x/Heat (1995) DVD.mkv", "dvd")]
+    [InlineData("/m/Heat (1995)/Heat (1995).mkv", "unknown")]
+    [InlineData("/m/Webster (1990)/Webster (1990).mkv", "unknown")]
+    public void Sources(string path, string expected) => Assert.Equal(expected, BadgeInfo.Source(path));
+
     [Fact]
     public void AudioLabels()
     {
@@ -79,6 +93,9 @@ public class BadgeTests
             ("2_dark_knight_rises.jpg", ["BluRay", "IMAX"], "/m/The Dark Knight Rises (2012) Imax/tdkr.mkv", [Audio("dts", 6, "DTS-HD MA")], 7.6f, 87f),
             ("3_aliens_dc.jpg", ["4K", "DoVi Top Left"], "/m/Aliens (1986)/Aliens (1986) {edition-Director's Cut}.mkv", [Audio("truehd", 8)], 8.4f, 97f),
             ("4_extended_rotten.jpg", ["BluRay"], "/m/Some Movie (2016)/Some Movie (2016) - Extended.mkv", [Audio("eac3", 6)], 5.9f, 42f),
+            ("5_webdl_1080p.jpg", ["1080p Full HD", "HDR10 Top Left"], "/m/Dune (2021)/Dune (2021) WEBDL-1080p.mkv", [Audio("eac3", 6)], 8.0f, 83f),
+            ("6_720p.jpg", ["720p HD"], "/m/Old Movie (2004)/Old Movie (2004) HDTV-720p.mkv", [Audio("ac3", 6)], 6.4f, 71f),
+            ("7_sd.jpg", ["SD", "IMAX"], "/m/Older Movie (1995) Imax/Older Movie (1995) DVD.mkv", [Audio("aac", 2)], 7.1f, 55f),
         };
         foreach (var s in samples)
         {
