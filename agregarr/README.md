@@ -9,6 +9,8 @@ The same badge logic as the Jellyfin plugin, for Agregarr (Plex). Import each zi
 | 720p HD | 720p |
 | SD | 480p / 576p / SD |
 | IMAX (no HDR / after HDR10 / after Dolby Vision) | `Imax` in the path; one copy per position so there is no gap |
+| IMDb Rating | `imdbRating` > 0; bottom-right |
+| Rotten Tomatoes Fresh / Rotten | `rtCriticsScore` ≥ 60 (tomato) or 1–59 (splat); far bottom-right |
 
 The rules depend on Radarr's default quality names in file names.
 
