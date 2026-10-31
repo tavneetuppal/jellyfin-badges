@@ -3,4 +3,4 @@ obj/
 out/
 *.zip
 !Jellyfin.Plugin.PosterOverlays/Templates/*.zip
-!agregarr/*.zip
+!agregarr/**/*.zip
