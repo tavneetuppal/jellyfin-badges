@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.2.0.0",
+        "changelog": "Pack badges without gaps and detect Atmos/DTS:X on any audio track",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.2.0.0/poster-overlays_1.2.0.0.zip",
+        "checksum": "39a9dd74ea24684e3563832b542fb551",
+        "timestamp": "2026-10-31T03:35:43Z"
+      },
+      {
         "version": "1.1.0.0",
         "changelog": "Auto-apply overlays to new and upgraded movies within 30 seconds",
         "targetAbi": "12.4.0.0",
