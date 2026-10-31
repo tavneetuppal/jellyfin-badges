@@ -4,6 +4,8 @@
 #   curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash
 #   ... | bash -s -- --libraries           preview turning the badges on in every movie library
 #   ... | bash -s -- --libraries --apply   do it
+#   ... | bash -s -- --handoff "Movies 4K/HDR" "TV 4K/HDR"   restore clean posters and stop Agregarr in those libraries
+#                                                           (before switching them to Kometa)
 # Overrides: AGREGARR_CONTAINER (default agregarr), AGREGARR_CONFIG (default /mnt/user/appdata/agregarr),
 #            AGREGARR_URL (default http://localhost:<port mapped by the container>)
 set -euo pipefail
@@ -22,16 +24,21 @@ if [ -z "${AGREGARR_URL:-}" ]; then
 fi
 echo "Agregarr: $AGREGARR_URL   config: $CONFIG"
 
-SCRIPT=sync.sh APPLY=0
-for arg in "$@"; do
-  case "$arg" in
+SCRIPT=sync.sh APPLY=0 LIBS=""
+while [ $# -gt 0 ]; do
+  case "$1" in
     --libraries) SCRIPT=libraries.sh ;;
     --apply) APPLY=1 ;;
-    *) echo "Unknown option: $arg"; exit 1 ;;
+    --handoff) SCRIPT=handoff.sh; shift
+               while [ $# -gt 0 ] && [ "${1#--}" = "$1" ]; do LIBS="${LIBS:+$LIBS|}$1"; shift; done
+               [ -n "$LIBS" ] || { echo "--handoff needs library names, e.g. --handoff \"Movies 4K/HDR\""; exit 1; }
+               continue ;;
+    *) echo "Unknown option: $1"; exit 1 ;;
   esac
+  shift
 done
 
 docker run --rm --network host \
-  -e PACK=/pack -e CONFIG=/config -e URL="$AGREGARR_URL" -e APPLY="$APPLY" \
+  -e PACK=/pack -e CONFIG=/config -e URL="$AGREGARR_URL" -e APPLY="$APPLY" -e LIBS="$LIBS" \
   -v "$TMP/jellyfin-badges-main/agregarr":/pack:ro -v "$CONFIG":/config \
   alpine sh "/pack/$SCRIPT"

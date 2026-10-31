@@ -45,3 +45,16 @@ Why not the import button:
 
 - Agregarr's importer rewrites a template's icon reference to an internal ID that its renderer can't load, so imported logos come out blank. These templates point at `/api/v1/posters/icons/user/Badges_<name>.svg`, which Agregarr serves straight from its icons folder.
 - Agregarr allows only one variable element per template, so the fixed labels (editions, audio) use plain text elements.
+
+## Handing a library over to Kometa
+
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash -s -- --handoff "Movies 4K/HDR" "TV 4K/HDR"
+```
+
+For each named library this:
+
+1. Enables only a template that matches nothing.
+2. Runs the library once. Agregarr resets every poster it overlaid to its saved original, but only when nothing matches.
+3. Waits for that run to finish.
+4. Leaves the library with nothing enabled, so Agregarr skips it from then on. Its templates stay in the list, unticked.

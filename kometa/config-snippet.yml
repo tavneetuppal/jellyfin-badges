@@ -1,0 +1,16 @@
+# Add/merge into /mnt/user/appdata/kometa/config.yml
+plex:
+  url: http://YOUR_UNRAID_IP:32400      # your Plex server
+  token: YOUR_PLEX_TOKEN                # https://support.plex.tv/articles/204059436
+tmdb:
+  apikey: YOUR_TMDB_API_KEY             # free, required by Kometa: https://www.themoviedb.org/settings/api
+  language: en
+
+libraries:
+  Movies 4K/HDR:                        # exact Plex library name
+    overlay_files:
+      - file: config/badges/overlays.yml
+  TV 4K/HDR:
+    overlay_files:
+      - file: config/badges/overlays.yml
+  # To undo: set remove_overlays: true on a library and run once (Kometa restores its backed-up originals).
