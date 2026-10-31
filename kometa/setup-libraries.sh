@@ -7,7 +7,6 @@ set -euo pipefail
 C=${KOMETA_CONFIG:-/mnt/user/appdata/kometa/config.yml}
 [ -f "$C" ] || { echo "$C not found"; exit 1; }
 grep -q '^libraries:' "$C" || { echo "No 'libraries:' section in $C"; exit 1; }
-[ "$(grep -n '^[^ #]' "$C" | tail -1 | cut -d: -f2-)" = "libraries:" ] || { echo "'libraries:' must be the last top-level section of $C"; exit 1; }
 cp "$C" "$C.bak.$(date +%Y%m%d-%H%M%S)"
 
 # 1. Plex libraries missing from the config
@@ -17,20 +16,29 @@ if [ -z "${PLEX_LIBRARIES:-}" ]; then
     | grep -E 'type="(movie|show)"' | grep -o ' title="[^"]*"' | cut -d'"' -f2)
 fi
 [ -n "$PLEX_LIBRARIES" ] || { echo "Couldn't read Plex libraries (check url/token in $C)"; exit 1; }
-tail -c1 "$C" | od -An -c | grep -q '\\n' || echo >> "$C"
+ADD=$(mktemp)
 while IFS= read -r L; do
   [ -n "$L" ] || continue
-  if grep -qxF "  $L:" "$C"; then continue; fi
-  printf '  %s:\n    overlay_files:\n      - file: config/badges/overlays.yml\n' "$L" >> "$C"
+  if grep -qxF "  $L:" "$C" || grep -qxF "  \"$L\":" "$C" || grep -qxF "  '$L':" "$C"; then continue; fi
+  printf '  %s:\n    overlay_files:\n      - file: config/badges/overlays.yml\n' "$L" >> "$ADD"
   echo "added library: $L"
 done <<< "$PLEX_LIBRARIES"
+# insert at the end of the libraries: section (Kometa appends other sections after it when it rewrites the file)
+awk -v addfile="$ADD" '
+  function emit() { if (!done) { while ((getline line < addfile) > 0) print line; done = 1 } }
+  /^libraries:/ { inlib = 1; print; next }
+  inlib && /^[^ #]/ { emit(); inlib = 0 }
+  { print }
+  END { if (inlib) emit() }
+' "$C" > "$C.new" && mv "$C.new" "$C"
+rm -f "$ADD"
 
 # 2. tmdb + universe collections in every library block that has no collection_files yet
 awk -v skip="|${SKIP_COLLECTIONS:-}|" '
   function flush() {
     if (hdr != "") {
       print hdr
-      name = hdr; sub(/^  /, "", name); sub(/:[ \t]*$/, "", name)
+      name = hdr; sub(/^  /, "", name); sub(/:[ \t]*$/, "", name); gsub(/^["\x27]|["\x27]$/, "", name)
       if (body !~ /collection_files:/ && index(skip, "|" name "|") == 0) {
         print "    collection_files:"; print "      - default: tmdb"; print "      - default: universe"
       }
@@ -39,6 +47,7 @@ awk -v skip="|${SKIP_COLLECTIONS:-}|" '
     hdr = ""; body = ""
   }
   /^libraries:/ { inlib = 1; print; next }
+  inlib && /^[^ #]/ { flush(); inlib = 0 }
   inlib && /^  [^ #].*:[ \t]*$/ { flush(); hdr = $0; next }
   inlib && hdr != "" { body = body $0 "\n"; next }
   { print }
@@ -46,4 +55,4 @@ awk -v skip="|${SKIP_COLLECTIONS:-}|" '
 ' "$C" > "$C.new" && mv "$C.new" "$C"
 
 echo "--- libraries in $C:"
-sed -n '/^libraries:/,$p' "$C"
+awk '/^libraries:/{p=1;print;next} p&&/^[^ #]/{p=0} p' "$C"
