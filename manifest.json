@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.5.0.0",
+        "changelog": "Badges 20% larger, no IMAX edition label; Kometa: no collections in 4K libraries",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.5.0.0/poster-overlays_1.5.0.0.zip",
+        "checksum": "7182b9a0fd5ee13c8dbf25488b4a08c2",
+        "timestamp": "2026-10-31T20:59:14Z"
+      },
+      {
         "version": "1.4.0.0",
         "changelog": "Badge TV show posters too",
         "targetAbi": "12.4.0.0",
