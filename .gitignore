@@ -1,0 +1,6 @@
+config.env
+data/
+*.zip
+!templates/*.zip
+demo.jpg
+__pycache__/
