@@ -19,14 +19,21 @@ Layout:
 - Audio is bottom-left.
 - Ratings are bottom-right.
 
-## Install
+## Install / update (Unraid)
 
-1. Copy the logos into Agregarr's icons folder (Unraid):
+```bash
+curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/agregarr/install-unraid.sh | bash
+```
 
-   ```bash
-   curl -sL https://github.com/tavneetuppal/jellyfin-badges/archive/refs/heads/main.tar.gz | tar -xz -C /tmp jellyfin-badges-main/agregarr/out/icons && cp /tmp/jellyfin-badges-main/agregarr/out/icons/*.svg /mnt/user/appdata/agregarr/icons/
-   ```
+The script does three things:
 
-2. Import the `Badges_*.zip` templates from `out/`.
+- copies the logos into Agregarr's icons folder
+- updates any `Badges_` template that already exists, in place, so library assignments are kept
+- creates the rest through Agregarr's API, using the API key from `settings.json`
 
-The logos are not inside the zips. Agregarr's importer rewrites a template's icon reference to an internal ID that its renderer can't load, so imported logos come out blank. These templates point at `/api/v1/posters/icons/user/Badges_<name>.svg` instead. Agregarr serves those files straight from its icons folder and lists them in the icon picker.
+It is safe to re-run after every change. Rebuild the templates with `python3 build.py`.
+
+Why not the import button:
+
+- Agregarr's importer rewrites a template's icon reference to an internal ID that its renderer can't load, so imported logos come out blank. These templates point at `/api/v1/posters/icons/user/Badges_<name>.svg`, which Agregarr serves straight from its icons folder.
+- Agregarr allows only one variable element per template, so the fixed labels (editions, audio) use plain text elements.

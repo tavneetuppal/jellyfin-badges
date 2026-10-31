@@ -86,8 +86,11 @@ def text_el(x, y, w, h, segments, size, weight="bold", layer=2, color="#FFFFFF",
                            "fontStyle": "normal", "color": color, "textAlign": "center", "opacity": 100}}
 
 
-def lit(s):
-    return [{"type": "text", "value": s}]
+def static_el(x, y, w, h, text, size, weight="bold", layer=2, color="#FFFFFF", eid=None):
+    """Plain text. Agregarr allows only one (unconditional) variable element per template, so fixed labels use this."""
+    return {"id": eid or f"text{layer}", "layerOrder": layer, "type": "text", "x": x, "y": y, "width": w, "height": h,
+            "properties": {"text": text, "fontSize": size, "fontFamily": "Inter", "fontWeight": weight,
+                           "fontStyle": "normal", "color": color, "textAlign": "center", "opacity": 100}}
 
 
 def rule(field, op, value):
@@ -186,7 +189,7 @@ def main():
         name = "Edition " + label.title().replace("'S", "'s")
         built.append(write(re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_") + "_overlay_template.zip", template(
             name, f"File name contains {token}}}", "generic",
-            [tile(MARGIN, y, tw, 44), text_el(MARGIN, y, tw, 44, lit(label), 24, layer=1)],
+            [tile(MARGIN, y, tw, 44), static_el(MARGIN, y, tw, 44, label, 24, layer=1)],
             [{"rules": [rule("filePath", "contains", token)]}]), {}))
 
     # 6. Audio labels, bottom-left, from audioCodec + audioChannels (Plex codec names). TrueHD 7.1 and all DTS are
@@ -201,9 +204,9 @@ def main():
         bw, dw, sep = text_w(brand, 26, True), text_w(detail, 26, False), 16
         start = MARGIN + (304 - (bw + sep + dw)) / 2
         els = [tile(MARGIN, ROW_BOTTOM, 304),
-               text_el(start, ROW_BOTTOM, bw, TILE_H, lit(brand), 26, layer=1, eid="brand"),
+               static_el(start, ROW_BOTTOM, bw, TILE_H, brand, 26, layer=1, eid="brand"),
                tile(start + bw + sep / 2 - 1, ROW_BOTTOM + 14, 2, TILE_H - 28, eid="separator"),
-               text_el(start + bw + sep, ROW_BOTTOM, dw, TILE_H, lit(detail), 26, weight="normal", layer=3, eid="detail")]
+               static_el(start + bw + sep, ROW_BOTTOM, dw, TILE_H, detail, 26, weight="normal", layer=3, eid="detail")]
         els[2]["layerOrder"] = 2
         els[2]["properties"].update(fillColor="#FFFFFF", fillOpacity=55, borderRadiusTopLeft=0)
         name = f"Audio {brand} {detail}"
