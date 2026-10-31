@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,10 +14,12 @@ public class OverlayTests
     private static readonly List<OverlayTemplate> Templates =
         OverlayTemplate.LoadAll(Path.Combine(Path.GetTempPath(), "no-custom-templates"), NullLogger.Instance);
 
-    private static Dictionary<string, object> Facts(string res, bool dv, bool hdr, string codec, int ch, string path) => new()
+    private static Dictionary<string, object> Facts(string res, bool dv, bool hdr, string codec, int ch, string path,
+        bool atmos = false, bool dtsX = false, bool dtsHdMa = false) => new()
     {
         ["resolution"] = res, ["dolbyVision"] = dv, ["hdr"] = hdr, ["hdr10Plus"] = false,
         ["videoCodec"] = "hevc", ["audioCodec"] = codec, ["audioChannels"] = ch,
+        ["atmos"] = atmos, ["dtsX"] = dtsX, ["dtsHdMa"] = dtsHdMa,
         ["filePath"] = path, ["title"] = "x", ["year"] = 2019,
     };
 
@@ -34,15 +37,41 @@ public class OverlayTests
 
     [Fact]
     public void UhdDolbyVisionAtmosImax()
-        => Assert.Equal(new[] { "4K", "Dolby Atmos", "DoVi Top Left", "IMAX" }, Hits(Facts("4k", true, true, "truehd", 8, "/m/Avengers Imax/a.mkv")));
+        => Assert.Equal(new[] { "4K", "Dolby Atmos", "DoVi Top Left", "IMAX" }, Hits(Facts("4k", true, true, "truehd", 8, "/m/Avengers Imax/a.mkv", atmos: true)));
 
     [Fact]
     public void HdHdr10DtsHdMa()
-        => Assert.Equal(new[] { "BluRay", "DTS HD MA", "HDR10 Top Left" }, Hits(Facts("1080", false, true, "dts", 6, "/m/x.mkv")));
+        => Assert.Equal(new[] { "BluRay", "DTS HD MA", "HDR10 Top Left" }, Hits(Facts("1080", false, true, "dts", 6, "/m/x.mkv", dtsHdMa: true)));
 
     [Fact]
-    public void DtsXUsesPlexDcaAlias()
-        => Assert.Contains("DTS X", Hits(Facts("1080", false, false, "DTS", 8, "/m/x.mkv")));
+    public void AtmosOn51TrueHd()
+        => Assert.Equal(new[] { "BluRay", "Dolby Atmos" }, Hits(Facts("1080", false, false, "truehd", 6, "/m/The Batman.mkv", atmos: true)));
+
+    [Fact]
+    public void DtsXDoesNotAlsoShowDtsHdMa()
+        => Assert.Equal(new[] { "BluRay", "DTS X" }, Hits(Facts("1080", false, false, "dts", 8, "/m/x.mkv", dtsX: true, dtsHdMa: true)));
+
+    [Fact]
+    public void ImaxPacksRightAfterResolution()
+    {
+        var used = Templates.Where(t => t.Name is "BluRay" or "IMAX").ToList();
+        var offsets = OverlayRenderer.PackRows(used);
+        var bluray = used.Single(t => t.Name == "BluRay");
+        var imax = used.Single(t => t.Name == "IMAX");
+        Assert.Equal(0, offsets[bluray], 3);
+        // BluRay tile: x 11.3, width 304 -> IMAX tile (designed at x 637) should start at 11.3 + 304 + 9
+        Assert.Equal(11.302785 + 304 + 9 - 637, offsets[imax], 3);
+    }
+
+    [Fact]
+    public void FullTopRowKeepsDesignedOrder()
+    {
+        var used = Templates.Where(t => t.Name is "4K" or "DoVi Top Left" or "IMAX" or "Dolby Atmos").ToList();
+        var o = OverlayRenderer.PackRows(used);
+        Assert.Equal(0, o[used.Single(t => t.Name == "4K")], 3);
+        Assert.Equal(0, o[used.Single(t => t.Name == "Dolby Atmos")], 3); // bottom row stays put
+        Assert.True(Math.Abs(o[used.Single(t => t.Name == "IMAX")]) < 1); // already packed in the design
+    }
 
     [Fact]
     public void PlainSdMatchesNothing()
@@ -53,7 +82,7 @@ public class OverlayTests
     {
         var poster = Gradient(1000, 1500);
         var logger = new CollectingLogger();
-        foreach (var set in new[] { new[] { "4K", "DoVi Top Left", "IMAX", "Dolby Atmos" }, new[] { "BluRay", "HDR10 Top Left", "DTS HD MA" }, new[] { "DTS X" } })
+        foreach (var set in new[] { new[] { "4K", "DoVi Top Left", "IMAX", "Dolby Atmos" }, new[] { "BluRay", "HDR10 Top Left", "DTS HD MA" }, new[] { "DTS X" }, new[] { "BluRay", "IMAX" }, new[] { "4K", "IMAX", "Dolby Atmos" } })
         {
             var jpeg = OverlayRenderer.Render(poster, Templates.Where(t => set.Contains(t.Name)).ToList(), 92, logger);
             using var bmp = SKBitmap.Decode(jpeg);

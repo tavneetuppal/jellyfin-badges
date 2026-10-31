@@ -24,6 +24,9 @@ public class OverlayService
     private static readonly SemaphoreSlim RunLock = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    // Bump when drawing changes so existing posters get redrawn. 2 = badges packed left without gaps.
+    private const string LayoutVersion = "L2";
+
     private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
     private readonly ILogger<OverlayService> _logger;
@@ -197,7 +200,7 @@ public class OverlayService
         var id = item.Id.ToString("N");
         var facts = MediaFacts.For(item);
         var hits = templates.Where(t => MediaFacts.Matches(t, facts, _logger)).ToList();
-        var signature = string.Join('|', hits.Select(t => t.Name + ":" + t.Hash));
+        var signature = LayoutVersion + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash));
 
         state.TryGetValue(id, out var st);
         var replacedOutside = st is not null && st.ImageTicks != info.DateModified.Ticks;

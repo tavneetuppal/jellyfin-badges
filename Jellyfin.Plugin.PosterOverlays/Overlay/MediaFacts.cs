@@ -47,6 +47,10 @@ public static class MediaFacts
             ["videoCodec"] = video?.Codec ?? string.Empty,
             ["audioCodec"] = audio?.Codec ?? string.Empty,
             ["audioChannels"] = audio?.Channels ?? 0,
+            // Any audio track, as detected by Jellyfin from the stream profile (works for 5.1 and 7.1, TrueHD and DD+).
+            ["atmos"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DolbyAtmos),
+            ["dtsX"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DTSX),
+            ["dtsHdMa"] = audios.Any(a => a.Profile?.Contains("DTS-HD MA", StringComparison.OrdinalIgnoreCase) == true),
             ["filePath"] = item.Path ?? string.Empty,
             ["title"] = item.Name ?? string.Empty,
             ["year"] = item.ProductionYear ?? 0,

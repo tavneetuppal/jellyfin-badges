@@ -24,9 +24,12 @@ Updates show up in Jellyfin's plugin page like any other plugin.
 
 ## Templates
 
+Badges are packed left within the top and bottom rows in their designed order: resolution, then Dolby Vision/HDR, then IMAX. A badge that doesn't apply leaves no gap.
+
+
 Built-in templates are in `Jellyfin.Plugin.PosterOverlays/Templates/`. To add one without a new release, export it from Agregarr and drop the `.zip` into `PosterOverlays/templates/`. A custom template replaces a built-in one with the same name.
 
-Supported condition fields: `resolution` (`4k`, `1080`, `720`, `sd`), `dolbyVision`, `hdr`, `hdr10Plus`, `videoCodec`, `audioCodec` (Plex `dca` = `dts`), `audioChannels`, `filePath`, `title`, `year`. Supported operators: `eq`, `ne`, `in`, `notIn`, `contains`, `notContains`, `gt`, `gte`, `lt`, `lte`.
+Supported condition fields: `resolution` (`4k`, `1080`, `720`, `sd`), `dolbyVision`, `hdr`, `hdr10Plus`, `videoCodec`, `audioCodec` (Plex `dca` = `dts`), `audioChannels`, `atmos`, `dtsX`, `dtsHdMa` (any audio track, as detected by Jellyfin), `filePath`, `title`, `year`. Supported operators: `eq`, `ne`, `in`, `notIn`, `contains`, `notContains`, `gt`, `gte`, `lt`, `lte`.
 
 ## Release
 

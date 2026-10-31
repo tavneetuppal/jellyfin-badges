@@ -30,9 +30,10 @@ public static class OverlayRenderer
         using (var canvas = new SKCanvas(bitmap))
         {
             canvas.DrawBitmap(decoded, 0, 0);
+            var offsets = PackRows(templates);
             foreach (var t in templates)
             {
-                Draw(canvas, bitmap.Width, bitmap.Height, t, logger);
+                Draw(canvas, bitmap.Width, bitmap.Height, t, offsets[t], logger);
             }
 
             canvas.Flush();
@@ -43,7 +44,57 @@ public static class OverlayRenderer
         return data.ToArray();
     }
 
-    private static void Draw(SKCanvas canvas, int w, int h, OverlayTemplate t, ILogger logger)
+    /// <summary>
+    /// Slides badges left so a row has no holes where a badge didn't apply (e.g. IMAX right after 4K when there's no HDR).
+    /// Badges are grouped into a top and bottom row by their designed position and keep their designed left-to-right order.
+    /// </summary>
+    /// <param name="templates">Templates being drawn.</param>
+    /// <returns>Horizontal shift per template, in template units.</returns>
+    internal static Dictionary<OverlayTemplate, double> PackRows(IReadOnlyList<OverlayTemplate> templates)
+    {
+        var boxes = templates.Select(t => (Template: t, Box: AnchorBox(t))).ToList();
+        var offsets = templates.ToDictionary(t => t, _ => 0.0);
+        foreach (var row in boxes.Where(b => b.Box is not null).GroupBy(b => b.Box!.Value.MidY < b.Box.Value.CanvasHeight / 2))
+        {
+            var ordered = row.OrderBy(b => b.Box!.Value.X).ThenBy(b => b.Template.Name, StringComparer.OrdinalIgnoreCase).ToList();
+            var x = ordered[0].Box!.Value.X;
+            foreach (var (template, box) in ordered)
+            {
+                offsets[template] = x - box!.Value.X;
+                x += box.Value.Width + BadgeGap;
+            }
+        }
+
+        return offsets;
+    }
+
+    // Gap between badges, in template units (matches the spacing in the Agregarr designs).
+    private const double BadgeGap = 9;
+
+    // The badge's background tile defines its footprint; icons can overhang (transparent padding in the SVG).
+    private static (double X, double Width, double MidY, double CanvasHeight)? AnchorBox(OverlayTemplate t)
+    {
+        var td = t.Root.GetProperty("templateData");
+        var elements = td.GetProperty("elements").EnumerateArray().ToList();
+        var anchors = elements.Where(e => Str(e, "type") == "tile").ToList();
+        if (anchors.Count == 0)
+        {
+            anchors = elements;
+        }
+
+        if (anchors.Count == 0)
+        {
+            return null;
+        }
+
+        var left = anchors.Min(e => Num(e, "x", 0));
+        var right = anchors.Max(e => Num(e, "x", 0) + Num(e, "width", 0));
+        var top = anchors.Min(e => Num(e, "y", 0));
+        var bottom = anchors.Max(e => Num(e, "y", 0) + Num(e, "height", 0));
+        return (left, right - left, (top + bottom) / 2, Num(td, "height", 1500));
+    }
+
+    private static void Draw(SKCanvas canvas, int w, int h, OverlayTemplate t, double dx, ILogger logger)
     {
         var td = t.Root.GetProperty("templateData");
         var sx = w / Num(td, "width", 1000);
@@ -53,7 +104,7 @@ public static class OverlayRenderer
         {
             var p = el.TryGetProperty("properties", out var props) ? props : default;
             var rect = SKRect.Create(
-                (float)(Num(el, "x", 0) * sx),
+                (float)((Num(el, "x", 0) + dx) * sx),
                 (float)(Num(el, "y", 0) * sy),
                 (float)(Num(el, "width", 0) * sx),
                 (float)(Num(el, "height", 0) * sy));
