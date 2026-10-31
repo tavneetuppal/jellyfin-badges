@@ -48,7 +48,10 @@ public static partial class BadgeInfo
             var tag = EditionTag().Match(name);
             if (tag.Success)
             {
-                return tag.Groups[1].Value.Trim().ToUpperInvariant();
+                // IMAX has its own badge, so it isn't shown as an edition: "{edition-IMAX}" -> none,
+                // "{edition-Director's Cut IMAX}" -> "DIRECTOR'S CUT".
+                var text = ImaxWords().Replace(tag.Groups[1].Value, " ").Trim(' ', '-', '_', '.', ',');
+                return text.Length == 0 ? null : NormalizeEdition(text);
             }
         }
 
@@ -205,6 +208,23 @@ public static partial class BadgeInfo
 
     [GeneratedRegex(@"\{edition-([^}]+)\}", RegexOptions.IgnoreCase)]
     private static partial Regex EditionTag();
+
+    [GeneratedRegex(@"\bimax(\s+enhanced)?\b", RegexOptions.IgnoreCase)]
+    private static partial Regex ImaxWords();
+
+    // Known editions get their canonical label (e.g. "Extended" -> "EXTENDED EDITION"); anything else is upper-cased.
+    private static string NormalizeEdition(string text)
+    {
+        foreach (var (pattern, label) in Editions)
+        {
+            if (pattern.IsMatch(text))
+            {
+                return label;
+            }
+        }
+
+        return Regex.Replace(text, @"\s+", " ").ToUpperInvariant();
+    }
 
     [GeneratedRegex(@"(?<![0-9])(19|20)[0-9]{2}(?![0-9])")]
     private static partial Regex Year();

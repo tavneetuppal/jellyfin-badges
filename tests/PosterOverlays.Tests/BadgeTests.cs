@@ -27,6 +27,11 @@ public class BadgeTests
     [InlineData("/m/The Final Cut (2004)/The Final Cut (2004).mkv", null)]
     [InlineData("/m/Extended Family (2010)/Extended Family (2010).mkv", null)]
     [InlineData("/m/Heat (1995)/Heat (1995).mkv", null)]
+    [InlineData("/m/Avengers Infinity War (2018)/Avengers Infinity War (2018) {edition-IMAX} Bluray-2160p.mkv", null)]
+    [InlineData("/m/x (2019)/x (2019) {edition-IMAX Enhanced}.mkv", null)]
+    [InlineData("/m/x (2019)/x (2019) {edition-Director's Cut IMAX}.mkv", "DIRECTOR'S CUT")]
+    [InlineData("/m/x (2019)/x (2019) {edition-Extended}.mkv", "EXTENDED EDITION")]
+    [InlineData("/m/x (2019)/x (2019) {edition-Open Matte}.mkv", "OPEN MATTE")]
     public void Editions(string path, string? expected) => Assert.Equal(expected, BadgeInfo.Edition(path));
 
     [Theory]
@@ -120,7 +125,7 @@ public class BadgeTests
         {
             var hits = Templates.Where(t => s.Templates.Contains(t.Name)).ToList();
             var extras = ExtraBadges.For(s.Path, s.Audio, s.Imdb, s.Rt, hits, cfg);
-            var jpeg = OverlayRenderer.Render(Poster(), hits, extras, 92, NullLogger.Instance);
+            var jpeg = OverlayRenderer.Render(Poster(), hits, extras, 92, 1.2, NullLogger.Instance);
             File.WriteAllBytes(Path.Combine(dir, s.File), jpeg);
         }
     }

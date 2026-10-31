@@ -36,21 +36,34 @@ public static class OverlayRenderer
     /// <param name="logger">Logger.</param>
     /// <returns>Encoded JPEG.</returns>
     public static byte[] Render(byte[] poster, IReadOnlyList<OverlayTemplate> templates, IReadOnlyList<ExtraBadge> extras, int jpegQuality, ILogger logger)
+        => Render(poster, templates, extras, jpegQuality, 1.0, logger);
+
+    /// <summary>
+    /// Renders templates and built-in badges onto a poster at a given badge size.
+    /// </summary>
+    /// <param name="poster">Encoded source poster.</param>
+    /// <param name="templates">Templates to draw, in order.</param>
+    /// <param name="extras">Built-in badges (audio label, edition, ratings).</param>
+    /// <param name="jpegQuality">JPEG quality.</param>
+    /// <param name="scale">Badge size relative to the design (1.2 = 20% larger). Margins stay the same.</param>
+    /// <param name="logger">Logger.</param>
+    /// <returns>Encoded JPEG.</returns>
+    public static byte[] Render(byte[] poster, IReadOnlyList<OverlayTemplate> templates, IReadOnlyList<ExtraBadge> extras, int jpegQuality, double scale, ILogger logger)
     {
         using var decoded = SKBitmap.Decode(poster) ?? throw new InvalidDataException("Poster could not be decoded");
         using var bitmap = new SKBitmap(new SKImageInfo(decoded.Width, decoded.Height, SKColorType.Rgba8888, SKAlphaType.Premul));
         using (var canvas = new SKCanvas(bitmap))
         {
             canvas.DrawBitmap(decoded, 0, 0);
-            var offsets = PackRows(templates);
+            var placements = PackRows(templates, scale);
             foreach (var t in templates)
             {
-                Draw(canvas, bitmap.Width, bitmap.Height, t, offsets[t], logger);
+                Draw(canvas, bitmap.Width, bitmap.Height, t, placements[t], logger);
             }
 
             if (extras.Count > 0)
             {
-                ExtraBadgeRenderer.Draw(canvas, bitmap.Width, bitmap.Height, extras, RowExtents(templates, offsets));
+                ExtraBadgeRenderer.Draw(canvas, bitmap.Width, bitmap.Height, extras, RowExtents(templates, placements), scale);
             }
 
             canvas.Flush();
@@ -62,28 +75,43 @@ public static class OverlayRenderer
     }
 
     /// <summary>
-    /// Slides badges left so a row has no holes where a badge didn't apply (e.g. IMAX right after 4K when there's no HDR).
-    /// Badges are grouped into a top and bottom row by their designed position and keep their designed left-to-right order.
+    /// Where each badge goes: scaled around its row's corner (top-left for the top row, bottom-left for the bottom row)
+    /// and slid left so a row has no holes where a badge didn't apply (e.g. IMAX right after 4K when there's no HDR).
+    /// Badges keep their designed left-to-right order; the row starts at its designed margin.
     /// </summary>
     /// <param name="templates">Templates being drawn.</param>
-    /// <returns>Horizontal shift per template, in template units.</returns>
-    internal static Dictionary<OverlayTemplate, double> PackRows(IReadOnlyList<OverlayTemplate> templates)
+    /// <param name="scale">Badge size relative to the design.</param>
+    /// <returns>Placement per template, in template units.</returns>
+    internal static Dictionary<OverlayTemplate, Placement> PackRows(IReadOnlyList<OverlayTemplate> templates, double scale = 1.0)
     {
+        var placements = templates.ToDictionary(t => t, _ => new Placement(0, 0, 0, 0, 1.0, false));
         var boxes = templates.Select(t => (Template: t, Box: AnchorBox(t))).ToList();
-        var offsets = templates.ToDictionary(t => t, _ => 0.0);
         foreach (var row in boxes.Where(b => b.Box is not null).GroupBy(b => b.Box!.Value.MidY < b.Box.Value.CanvasHeight / 2))
         {
             var ordered = row.OrderBy(b => b.Box!.Value.X).ThenBy(b => b.Template.Name, StringComparer.OrdinalIgnoreCase).ToList();
             var x = ordered[0].Box!.Value.X;
             foreach (var (template, box) in ordered)
             {
-                offsets[template] = x - box!.Value.X;
-                x += box.Value.Width + BadgeGap;
+                var b = box!.Value;
+                var anchorY = row.Key ? b.Y : b.Y + b.Height;   // top row grows down, bottom row grows up
+                placements[template] = new Placement(b.X, anchorY, x, b.Width * scale, scale, row.Key);
+                x += (b.Width * scale) + BadgeGap;
             }
         }
 
-        return offsets;
+        return placements;
     }
+
+    /// <summary>
+    /// Where a template is drawn: its anchor (BoxX, AnchorY) moves to (X, AnchorY) and the template scales around it.
+    /// </summary>
+    /// <param name="BoxX">Designed left edge of the badge.</param>
+    /// <param name="AnchorY">Designed top (top row) or bottom (bottom row) edge.</param>
+    /// <param name="X">Packed left edge.</param>
+    /// <param name="Width">Drawn width.</param>
+    /// <param name="Scale">Size factor.</param>
+    /// <param name="TopRow">Whether the badge is in the top row.</param>
+    internal readonly record struct Placement(double BoxX, double AnchorY, double X, double Width, double Scale, bool TopRow);
 
     /// <summary>
     /// Gap between badges, in template units (matches the spacing in the Agregarr designs).
@@ -94,26 +122,27 @@ public static class OverlayRenderer
     /// Where the template rows end after packing, so built-in badges can be placed around them.
     /// </summary>
     /// <param name="templates">Templates being drawn.</param>
-    /// <param name="offsets">Offsets from <see cref="PackRows"/>.</param>
+    /// <param name="placements">Placements from <see cref="PackRows"/>.</param>
     /// <returns>Whether the top row has badges, and the right edge of the bottom row (template units, 0 when empty).</returns>
-    internal static (bool TopRow, double BottomRight) RowExtents(IReadOnlyList<OverlayTemplate> templates, Dictionary<OverlayTemplate, double> offsets)
+    internal static (bool TopRow, double BottomRight) RowExtents(IReadOnlyList<OverlayTemplate> templates, Dictionary<OverlayTemplate, Placement> placements)
     {
         bool top = false;
         double bottomRight = 0;
         foreach (var t in templates)
         {
-            if (AnchorBox(t) is not { } b)
+            if (AnchorBox(t) is null)
             {
                 continue;
             }
 
-            if (b.MidY < b.CanvasHeight / 2)
+            var p = placements[t];
+            if (p.TopRow)
             {
                 top = true;
             }
             else
             {
-                bottomRight = Math.Max(bottomRight, b.X + offsets[t] + b.Width);
+                bottomRight = Math.Max(bottomRight, p.X + p.Width);
             }
         }
 
@@ -121,7 +150,7 @@ public static class OverlayRenderer
     }
 
     // The badge's background tile defines its footprint; icons can overhang (transparent padding in the SVG).
-    private static (double X, double Width, double MidY, double CanvasHeight)? AnchorBox(OverlayTemplate t)
+    private static (double X, double Y, double Width, double Height, double MidY, double CanvasHeight)? AnchorBox(OverlayTemplate t)
     {
         var td = t.Root.GetProperty("templateData");
         var elements = td.GetProperty("elements").EnumerateArray().ToList();
@@ -140,20 +169,27 @@ public static class OverlayRenderer
         var right = anchors.Max(e => Num(e, "x", 0) + Num(e, "width", 0));
         var top = anchors.Min(e => Num(e, "y", 0));
         var bottom = anchors.Max(e => Num(e, "y", 0) + Num(e, "height", 0));
-        return (left, right - left, (top + bottom) / 2, Num(td, "height", 1500));
+        return (left, top, right - left, bottom - top, (top + bottom) / 2, Num(td, "height", 1500));
     }
 
-    private static void Draw(SKCanvas canvas, int w, int h, OverlayTemplate t, double dx, ILogger logger)
+    private static void Draw(SKCanvas canvas, int w, int h, OverlayTemplate t, Placement place, ILogger logger)
     {
         var td = t.Root.GetProperty("templateData");
         var sx = w / Num(td, "width", 1000);
         var sy = h / Num(td, "height", 1500);
+
+        // Move the anchor to its packed spot and scale the whole badge around it.
+        canvas.Save();
+        canvas.Translate((float)(place.X * sx), (float)(place.AnchorY * sy));
+        canvas.Scale((float)place.Scale);
+        canvas.Translate((float)(-place.BoxX * sx), (float)(-place.AnchorY * sy));
+
         var elements = td.GetProperty("elements").EnumerateArray().OrderBy(e => Num(e, "layerOrder", 0));
         foreach (var el in elements)
         {
             var p = el.TryGetProperty("properties", out var props) ? props : default;
             var rect = SKRect.Create(
-                (float)((Num(el, "x", 0) + dx) * sx),
+                (float)(Num(el, "x", 0) * sx),
                 (float)(Num(el, "y", 0) * sy),
                 (float)(Num(el, "width", 0) * sx),
                 (float)(Num(el, "height", 0) * sy));
@@ -179,6 +215,8 @@ public static class OverlayRenderer
 
             canvas.Restore();
         }
+
+        canvas.Restore();
     }
 
     private static void DrawTile(SKCanvas canvas, SKRect rect, JsonElement p, float scale)

@@ -61,6 +61,12 @@
                     </div>
 
                     <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="BadgeScalePercent">Badge size (%)</label>
+                        <input id="BadgeScalePercent" name="BadgeScalePercent" type="number" is="emby-input" min="100" max="120" />
+                        <div class="fieldDescription">100 = original size, 120 = 20% larger (default; easier to read on a TV, and the largest where 4K + Dolby Vision + IMAX still fit).</div>
+                    </div>
+
+                    <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused" for="JpegQuality">JPEG quality</label>
                         <input id="JpegQuality" name="JpegQuality" type="number" is="emby-input" min="50" max="100" />
                         <div class="fieldDescription">Quality of the saved posters (50-100). Default 92.</div>
@@ -94,6 +100,7 @@
                         var config = r[0], info = r[1];
                         var disabled = (config.DisabledTemplates || []).map(function (n) { return n.toLowerCase(); });
                         page.querySelector('#JpegQuality').value = config.JpegQuality || 92;
+                        page.querySelector('#BadgeScalePercent').value = config.BadgeScalePercent || 120;
                         page.querySelector('#OnlyTitlesContaining').value = config.OnlyTitlesContaining || '';
                         ['IncludeTvShows', 'ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
                             page.querySelector('#' + k).checked = config[k] !== false;
@@ -123,6 +130,8 @@
                             .map(function (c) { return c.getAttribute('data-name'); });
                         var q = parseInt(page.querySelector('#JpegQuality').value, 10);
                         config.JpegQuality = isNaN(q) ? 92 : Math.min(100, Math.max(50, q));
+                        var bs = parseInt(page.querySelector('#BadgeScalePercent').value, 10);
+                        config.BadgeScalePercent = isNaN(bs) ? 120 : Math.min(120, Math.max(100, bs));
                         config.OnlyTitlesContaining = page.querySelector('#OnlyTitlesContaining').value.trim();
                         ['IncludeTvShows', 'ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
                             config[k] = page.querySelector('#' + k).checked;

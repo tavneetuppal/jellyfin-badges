@@ -60,4 +60,4 @@ This adds every Plex movie and TV library missing from `config.yml`, with the ba
 
 - It's safe to re-run: it only adds what's missing.
 - It backs up `config.yml` first.
-- To leave collections out of some libraries, set `SKIP_COLLECTIONS="Movies 4K/HDR|TV 4K/HDR"` before `bash`.
+- Libraries with `4K` in the name get no collections. If an earlier run added the default ones there, they're removed. To leave out more libraries, set `SKIP_COLLECTIONS="Kids|Anime"` before `bash`.

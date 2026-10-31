@@ -55,12 +55,12 @@ public class OverlayTests
     public void ImaxPacksRightAfterResolution()
     {
         var used = Templates.Where(t => t.Name is "BluRay" or "IMAX").ToList();
-        var offsets = OverlayRenderer.PackRows(used);
+        var p = OverlayRenderer.PackRows(used);
         var bluray = used.Single(t => t.Name == "BluRay");
         var imax = used.Single(t => t.Name == "IMAX");
-        Assert.Equal(0, offsets[bluray], 3);
+        Assert.Equal(11.302785, p[bluray].X, 3);
         // BluRay tile: x 11.3, width 304 -> IMAX tile (designed at x 637) should start at 11.3 + 304 + 9
-        Assert.Equal(11.302785 + 304 + 9 - 637, offsets[imax], 3);
+        Assert.Equal(11.302785 + 304 + 9, p[imax].X, 3);
     }
 
     [Fact]
@@ -68,9 +68,22 @@ public class OverlayTests
     {
         var used = Templates.Where(t => t.Name is "4K" or "DoVi Top Left" or "IMAX" or "Dolby Atmos").ToList();
         var o = OverlayRenderer.PackRows(used);
-        Assert.Equal(0, o[used.Single(t => t.Name == "4K")], 3);
-        Assert.Equal(0, o[used.Single(t => t.Name == "Dolby Atmos")], 3); // bottom row stays put
-        Assert.True(Math.Abs(o[used.Single(t => t.Name == "IMAX")]) < 1); // already packed in the design
+        Assert.Equal(o[used.Single(t => t.Name == "4K")].BoxX, o[used.Single(t => t.Name == "4K")].X, 3);
+        Assert.Equal(o[used.Single(t => t.Name == "Dolby Atmos")].BoxX, o[used.Single(t => t.Name == "Dolby Atmos")].X, 3); // bottom row stays put
+        Assert.True(Math.Abs(o[used.Single(t => t.Name == "IMAX")].X - 637) < 1); // already packed in the design
+    }
+
+    [Fact]
+    public void TwentyPercentLargerTopRowStillFits()
+    {
+        var used = Templates.Where(t => t.Name is "4K" or "DoVi Top Left" or "IMAX" or "Dolby Atmos").ToList();
+        var o = OverlayRenderer.PackRows(used, 1.2);
+        var imax = o[used.Single(t => t.Name == "IMAX")];
+        Assert.True(imax.X + imax.Width <= 1000 - 11, $"top row ends at {imax.X + imax.Width}");
+        Assert.Equal(304 * 1.2, o[used.Single(t => t.Name == "4K")].Width, 3);
+        var atmos = o[used.Single(t => t.Name == "Dolby Atmos")];
+        Assert.False(atmos.TopRow);
+        Assert.Equal(1430 + 53, atmos.AnchorY, 3);   // bottom row grows upwards from the same bottom edge
     }
 
     [Fact]

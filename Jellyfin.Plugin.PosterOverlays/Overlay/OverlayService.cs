@@ -24,8 +24,9 @@ public class OverlayService
     private static readonly SemaphoreSlim RunLock = new(1, 1);
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    // Bump when drawing changes so existing posters get redrawn. 2 = badges packed left without gaps, 3 = built-in badges.
-    private const string LayoutVersion = "L3";
+    // Bump when drawing changes so existing posters get redrawn. 2 = badges packed left without gaps, 3 = built-in badges,
+    // 4 = badge size setting (the size is also part of the signature, so changing it redraws).
+    private const string LayoutVersion = "L4";
 
     private readonly ILibraryManager _libraryManager;
     private readonly IProviderManager _providerManager;
@@ -208,7 +209,7 @@ public class OverlayService
             ? ExtraBadges.ForShow(media, item, hits, Plugin.Instance!.Configuration)
             : ExtraBadges.For(item, hits, Plugin.Instance!.Configuration);
         var nothingToDraw = hits.Count == 0 && extras.Count == 0;
-        var signature = LayoutVersion + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash).Concat(extras.Select(e => e.Key)));
+        var signature = LayoutVersion + "@" + BadgeScale() + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash).Concat(extras.Select(e => e.Key)));
 
         state.TryGetValue(id, out var st);
         var replacedOutside = st is not null && st.ImageTicks != info.DateModified.Ticks;
@@ -259,13 +260,15 @@ public class OverlayService
             return true;
         }
 
-        var jpeg = JpegMarker.Add(OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, extras, quality, _logger), st.Original!);
+        var jpeg = JpegMarker.Add(OverlayRenderer.Render(File.ReadAllBytes(originalPath), hits, extras, quality, BadgeScale(), _logger), st.Original!);
         await SaveAsync(item, jpeg, "image/jpeg", ct).ConfigureAwait(false);
         st.Signature = signature;
         st.ImageTicks = item.GetImageInfo(ImageType.Primary, 0)?.DateModified.Ticks ?? 0;
         _logger.LogInformation("Poster Overlays: {Name} -> {Templates}", item.Name, string.Join(", ", hits.Select(t => t.Name).Concat(extras.Select(e => e.Kind + " " + e.Text))));
         return true;
     }
+
+    private static double BadgeScale() => Math.Clamp(Plugin.Instance!.Configuration.BadgeScalePercent, 100, 120) / 100.0;
 
     private async Task SaveAsync(BaseItem item, byte[] bytes, string mime, CancellationToken ct)
     {

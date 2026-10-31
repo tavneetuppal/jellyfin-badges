@@ -18,6 +18,12 @@ public class PluginConfiguration : BasePluginConfiguration
     public int JpegQuality { get; set; } = 92;
 
     /// <summary>
+    /// Gets or sets the badge size in percent of the original design (100-120). 120 is the largest where
+    /// 4K + Dolby Vision + IMAX still fit across the top of the poster.
+    /// </summary>
+    public int BadgeScalePercent { get; set; } = 120;
+
+    /// <summary>
     /// Gets or sets a title filter for trying the plugin out: when set, only movies whose title contains this text are processed.
     /// </summary>
     public string OnlyTitlesContaining { get; set; } = string.Empty;

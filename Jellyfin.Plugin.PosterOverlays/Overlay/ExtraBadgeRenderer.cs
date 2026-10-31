@@ -27,21 +27,24 @@ internal static class ExtraBadgeRenderer
     private static readonly Lazy<SKPicture?> TomatoFresh = new(() => LoadSvg("rt_fresh.svg"));
     private static readonly Lazy<SKPicture?> TomatoRotten = new(() => LoadSvg("rt_rotten.svg"));
 
-    public static void Draw(SKCanvas canvas, int w, int h, IReadOnlyList<ExtraBadge> badges, (bool TopRow, double BottomRight) rows)
+    public static void Draw(SKCanvas canvas, int w, int h, IReadOnlyList<ExtraBadge> badges, (bool TopRow, double BottomRight) rows, double scale = 1.0)
     {
         var u = new Units(w / 1000.0, h / 1500.0);
+        var s = scale;
         var bottomLeftEnd = rows.BottomRight;
+        const double bottomEdge = BottomY + TileH;   // bottom-row badges keep this edge and grow upwards
 
         foreach (var b in badges.Where(b => b.Kind == ExtraBadgeKind.Audio))
         {
             var x = bottomLeftEnd > 0 ? bottomLeftEnd + OverlayRenderer.BadgeGap : Margin;
-            DrawAudio(canvas, u, x, BottomY, b);
-            bottomLeftEnd = x + 304;
+            Scaled(canvas, u, x, bottomEdge, s, () => DrawAudio(canvas, u, x, BottomY, b));
+            bottomLeftEnd = x + (304 * s);
         }
 
         foreach (var b in badges.Where(b => b.Kind == ExtraBadgeKind.Edition))
         {
-            DrawLabel(canvas, u, Margin, rows.TopRow ? TopY + TileH + OverlayRenderer.BadgeGap : TopY, 44, b.Text, 24);
+            var y = rows.TopRow ? TopY + (TileH * s) + OverlayRenderer.BadgeGap : TopY;
+            Scaled(canvas, u, Margin, y, s, () => DrawLabel(canvas, u, Margin, y, 44, b.Text, 24));
         }
 
         // Ratings: right-aligned, IMDb then Rotten Tomatoes; move up a row if they would hit the bottom-left badges.
@@ -55,14 +58,28 @@ internal static class ExtraBadgeRenderer
         }
 
         var widths = ratings.Select(b => RatingWidth(b)).ToList();
-        var total = widths.Sum() + (OverlayRenderer.BadgeGap * (ratings.Count - 1));
+        var total = (widths.Sum() * s) + (OverlayRenderer.BadgeGap * (ratings.Count - 1));
         var left = 1000 - Margin - total;
-        var y = bottomLeftEnd > 0 && left < bottomLeftEnd + OverlayRenderer.BadgeGap ? BottomY - TileH - OverlayRenderer.BadgeGap : BottomY;
+        var edge = bottomLeftEnd > 0 && left < bottomLeftEnd + OverlayRenderer.BadgeGap ? bottomEdge - (TileH * s) - OverlayRenderer.BadgeGap : bottomEdge;
         for (var i = 0; i < ratings.Count; i++)
         {
-            DrawRating(canvas, u, left, y, widths[i], ratings[i]);
-            left += widths[i] + OverlayRenderer.BadgeGap;
+            var x = left;
+            var width = widths[i];
+            var b = ratings[i];
+            Scaled(canvas, u, x, edge, s, () => DrawRating(canvas, u, x, edge - TileH, width, b));
+            left += (widths[i] * s) + OverlayRenderer.BadgeGap;
         }
+    }
+
+    // Draws a badge laid out at design size, scaled around (ax, ay) in design units.
+    private static void Scaled(SKCanvas canvas, Units u, double ax, double ay, double scale, Action draw)
+    {
+        canvas.Save();
+        canvas.Translate(u.X(ax), u.Y(ay));
+        canvas.Scale((float)scale);
+        canvas.Translate(-u.X(ax), -u.Y(ay));
+        draw();
+        canvas.Restore();
     }
 
     private static void DrawAudio(SKCanvas canvas, Units u, double x, double y, ExtraBadge b)

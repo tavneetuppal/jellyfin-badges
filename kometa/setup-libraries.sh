@@ -2,7 +2,8 @@
 # Makes Kometa's config.yml cover every Plex movie/TV library with the badge overlays and the default
 # tmdb + universe collections. Safe to re-run: only adds what's missing. Backs up config.yml first.
 #   curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/kometa/setup-libraries.sh | bash
-# SKIP_COLLECTIONS="Movies 4K/HDR|TV 4K/HDR" leaves collections out of those libraries.
+# Libraries with "4K" in the name get no collections (avoids duplicating the main libraries' collections);
+# SKIP_COLLECTIONS="Kids|Anime" leaves collections out of more libraries.
 set -euo pipefail
 C=${KOMETA_CONFIG:-/mnt/user/appdata/kometa/config.yml}
 [ -f "$C" ] || { echo "$C not found"; exit 1; }
@@ -33,23 +34,35 @@ awk -v addfile="$ADD" '
 ' "$C" > "$C.new" && mv "$C.new" "$C"
 rm -f "$ADD"
 
-# 2. tmdb + universe collections in every library block that has no collection_files yet
+# 2. tmdb + universe collections in every library block that has no collection_files yet.
+#    Libraries with "4K" in the name (and any in SKIP_COLLECTIONS) get none: the default tmdb/universe entries are
+#    removed from them if an earlier run added them; other collections there are left alone.
 awk -v skip="|${SKIP_COLLECTIONS:-}|" '
-  function flush() {
-    if (hdr != "") {
-      print hdr
-      name = hdr; sub(/^  /, "", name); sub(/:[ \t]*$/, "", name); gsub(/^["\x27]|["\x27]$/, "", name)
-      if (body !~ /collection_files:/ && index(skip, "|" name "|") == 0) {
-        print "    collection_files:"; print "      - default: tmdb"; print "      - default: universe"
+  function skipped(name) { return index(skip, "|" name "|") > 0 || toupper(name) ~ /4K/ }
+  function flush(   i, k, has, name, out, n) {
+    if (hdr == "") return
+    print hdr
+    name = hdr; sub(/^  /, "", name); sub(/:[ \t]*$/, "", name); gsub(/^["\x27]|["\x27]$/, "", name)
+    has = 0
+    for (i = 1; i <= nb; i++) if (body[i] ~ /^    collection_files:/) has = 1
+    if (skipped(name)) {
+      # drop our default entries, then a collection_files key left with no entries
+      n = 0
+      for (i = 1; i <= nb; i++) if (body[i] !~ /^[ \t]*- default: (tmdb|universe)[ \t]*$/) out[++n] = body[i]
+      for (i = 1; i <= n; i++) {
+        if (out[i] ~ /^    collection_files:[ \t]*$/ && (i == n || out[i + 1] !~ /^(      |    - )/)) continue
+        print out[i]
       }
-      printf "%s", body
+    } else {
+      if (!has) { print "    collection_files:"; print "      - default: tmdb"; print "      - default: universe" }
+      for (i = 1; i <= nb; i++) print body[i]
     }
-    hdr = ""; body = ""
+    hdr = ""; nb = 0
   }
   /^libraries:/ { inlib = 1; print; next }
   inlib && /^[^ #]/ { flush(); inlib = 0 }
   inlib && /^  [^ #].*:[ \t]*$/ { flush(); hdr = $0; next }
-  inlib && hdr != "" { body = body $0 "\n"; next }
+  inlib && hdr != "" { body[++nb] = $0; next }
   { print }
   END { flush() }
 ' "$C" > "$C.new" && mv "$C.new" "$C"
