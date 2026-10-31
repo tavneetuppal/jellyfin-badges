@@ -4,6 +4,8 @@
 #   curl -sL https://raw.githubusercontent.com/tavneetuppal/jellyfin-badges/main/kometa/setup-libraries.sh | bash
 # Libraries with "4K" in the name get no collections (avoids duplicating the main libraries' collections);
 # SKIP_COLLECTIONS="Kids|Anime" leaves collections out of more libraries.
+# Libraries listed (one per line) in badges-exclude-libraries.txt next to config.yml are never added
+# (e.g. home videos).
 set -euo pipefail
 C=${KOMETA_CONFIG:-/mnt/user/appdata/kometa/config.yml}
 [ -f "$C" ] || { echo "$C not found"; exit 1; }
@@ -17,9 +19,11 @@ if [ -z "${PLEX_LIBRARIES:-}" ]; then
     | grep -E 'type="(movie|show)"' | grep -o ' title="[^"]*"' | cut -d'"' -f2)
 fi
 [ -n "$PLEX_LIBRARIES" ] || { echo "Couldn't read Plex libraries (check url/token in $C)"; exit 1; }
+EXCLUDE="$(dirname "$C")/badges-exclude-libraries.txt"
 ADD=$(mktemp)
 while IFS= read -r L; do
   [ -n "$L" ] || continue
+  if [ -f "$EXCLUDE" ] && grep -qxF "$L" "$EXCLUDE"; then continue; fi
   if grep -qxF "  $L:" "$C" || grep -qxF "  \"$L\":" "$C" || grep -qxF "  '$L':" "$C"; then continue; fi
   printf '  %s:\n    overlay_files:\n      - file: config/badges/overlays.yml\n' "$L" >> "$ADD"
   echo "added library: $L"
