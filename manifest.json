@@ -7,6 +7,15 @@
     "owner": "tavneetuppal",
     "category": "Metadata",
     "imageUrl": "",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "First release: Agregarr templates, poster backup/restore, settings page",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.0.0.0/poster-overlays_1.0.0.0.zip",
+        "checksum": "9486e3725ca11fe3ff891906dfff3d9b",
+        "timestamp": "2026-10-31T03:14:23Z"
+      }
+    ]
   }
 ]
