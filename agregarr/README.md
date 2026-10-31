@@ -19,4 +19,4 @@ Layout:
 - Audio is bottom-left.
 - Ratings are bottom-right.
 
-Icons use a `0 0` viewBox with no fixed width or height, so Agregarr shows them at the template size on import.
+Each icon has its width and height set to its template element size, with a `0 0` viewBox. Agregarr draws imported icons at the SVG's own size, so the two have to match.

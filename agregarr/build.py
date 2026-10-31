@@ -1,7 +1,7 @@
 """Builds the Agregarr template pack in ./out from the Agregarr exports in ./src and the logos in ../Jellyfin.Plugin.PosterOverlays.
 
-Every icon is normalized (viewBox from 0 0, no fixed width/height) and gets a fresh id, because Agregarr draws
-icons with an offset viewBox off-canvas and resets an icon's size to the SVG's width/height when it's reselected.
+Every icon is normalized (viewBox from 0 0, width/height equal to the element's size) and gets a fresh id, because
+Agregarr draws imported icons at the SVG's own size and puts icons with an offset viewBox off-canvas.
 
     python3 build.py
 """
@@ -18,7 +18,7 @@ MARGIN, GAP, TILE_H, ROW_TOP, ROW_BOTTOM = 11.302785050976325, 9, 53, 6.40366692
 TILE_PROPS = {"fillColor": "#000000", "fillOpacity": 35, "borderColor": "#FFFFFF", "borderWidth": 0, "lockCorners": True, "borderRadiusTopLeft": 15}
 
 
-def normalize(svg: bytes) -> bytes:
+def normalize(svg: bytes, width: float, height: float) -> bytes:
     s = svg.decode("utf-8")
     root = re.search(r"<svg\b[^>]*>", s, re.S).group(0)
     inner = s[s.index(root) + len(root): s.rindex("</svg>")]
@@ -31,7 +31,9 @@ def normalize(svg: bytes) -> bytes:
         h = float(re.search(r'\bheight="([\d.]+)', root).group(1))
     ns = " ".join(re.findall(r'xmlns:\w+="[^"]+"', root))
     body = inner if (x0, y0) == (0.0, 0.0) else f'<g transform="translate({-x0:g} {-y0:g})">{inner}</g>'
-    return f'<svg xmlns="http://www.w3.org/2000/svg" {ns} version="1.1" viewBox="0 0 {w:g} {h:g}">{body}</svg>'.encode()
+    # width/height = the element's size: Agregarr sizes imported icons from the SVG itself, so the two must agree.
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" {ns} version="1.1" width="{width:g}" height="{height:g}" '
+            f'viewBox="0 0 {w:g} {h:g}" preserveAspectRatio="xMidYMid meet">{body}</svg>').encode()
 
 
 def read(path):
@@ -52,7 +54,7 @@ def write(fname, t, icons):
             old = Path(e["properties"]["iconPath"]).name
             new = f"{uuid.uuid4()}.svg"
             e["properties"]["iconPath"] = f"/api/v1/posters/icons/user/{new}"
-            files[f"assets/icons/{new}"] = normalize(icons[old])
+            files[f"assets/icons/{new}"] = normalize(icons[old], round(e["width"], 2), round(e["height"], 2))
     t["exportedAt"], t["version"] = NOW, "1.0"
     with zipfile.ZipFile(OUT / fname, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("template.json", json.dumps(t, indent=2))
