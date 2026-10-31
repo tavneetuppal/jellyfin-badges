@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -11,7 +12,8 @@ using Microsoft.Extensions.Logging;
 namespace Jellyfin.Plugin.PosterOverlays.Overlay;
 
 /// <summary>
-/// Re-applies overlays shortly after movies are added or updated (new media, file upgrades, poster changes),
+/// Re-applies overlays shortly after movies or shows are added or updated (new media, file upgrades, new episodes,
+/// poster changes),
 /// instead of waiting for the daily task. Changes are batched so a library scan becomes one run.
 /// The plugin's own poster saves also raise update events; those are no-ops because the item is already up to date.
 /// </summary>
@@ -68,12 +70,24 @@ public sealed class LibraryWatcher : IHostedService, IDisposable
 
     private void OnItemChanged(object? sender, ItemChangeEventArgs e)
     {
-        if (e.Item is null || e.Item.GetBaseItemKind() != BaseItemKind.Movie || e.Item.IsVirtualItem)
+        if (e.Item is null || e.Item.IsVirtualItem)
         {
             return;
         }
 
-        _pending[e.Item.Id] = 0;
+        // An episode change (new episode, upgraded file) can change its show's badges.
+        var id = e.Item switch
+        {
+            Episode episode => episode.SeriesId,
+            _ when e.Item.GetBaseItemKind() is BaseItemKind.Movie or BaseItemKind.Series => e.Item.Id,
+            _ => Guid.Empty,
+        };
+        if (id == Guid.Empty)
+        {
+            return;
+        }
+
+        _pending[id] = 0;
         _timer.Change(Delay, Timeout.InfiniteTimeSpan); // restart the quiet period
     }
 

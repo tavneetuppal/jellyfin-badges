@@ -27,6 +27,14 @@
                     </div>
 
                     <div class="verticalSection">
+                        <h3 class="sectionTitle">Libraries</h3>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="IncludeTvShows" /><span>TV shows</span></label>
+                            <div class="fieldDescription checkboxFieldDescription">Badge show posters too. Each show uses its most typical recent episode (resolution, HDR, audio, source from the file name); ratings come from the show.</div>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection">
                         <h3 class="sectionTitle">Built-in badges</h3>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" id="ShowAudioLabel" /><span>Audio label</span></label>
@@ -87,7 +95,7 @@
                         var disabled = (config.DisabledTemplates || []).map(function (n) { return n.toLowerCase(); });
                         page.querySelector('#JpegQuality').value = config.JpegQuality || 92;
                         page.querySelector('#OnlyTitlesContaining').value = config.OnlyTitlesContaining || '';
-                        ['ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
+                        ['IncludeTvShows', 'ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
                             page.querySelector('#' + k).checked = config[k] !== false;
                         });
                         page.querySelector('#customFolder').textContent = info.CustomFolder;
@@ -116,7 +124,7 @@
                         var q = parseInt(page.querySelector('#JpegQuality').value, 10);
                         config.JpegQuality = isNaN(q) ? 92 : Math.min(100, Math.max(50, q));
                         config.OnlyTitlesContaining = page.querySelector('#OnlyTitlesContaining').value.trim();
-                        ['ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
+                        ['IncludeTvShows', 'ShowAudioLabel', 'ShowEdition', 'ShowImdbRating', 'ShowRottenTomatoes'].forEach(function (k) {
                             config[k] = page.querySelector('#' + k).checked;
                         });
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {

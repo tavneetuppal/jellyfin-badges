@@ -53,6 +53,17 @@ public static class ExtraBadges
         => For(item.Path, item.GetMediaStreams(), item.CommunityRating, item.CriticRating, hits, config);
 
     /// <summary>
+    /// Builds the built-in badges for a show: audio from its representative episode, ratings from the show, no edition.
+    /// </summary>
+    /// <param name="media">Representative episode, or null.</param>
+    /// <param name="show">The show.</param>
+    /// <param name="hits">Templates that matched.</param>
+    /// <param name="config">Plugin settings.</param>
+    /// <returns>Badges to draw.</returns>
+    public static List<ExtraBadge> ForShow(BaseItem? media, BaseItem show, IReadOnlyList<OverlayTemplate> hits, PluginConfiguration config)
+        => For(null, media?.GetMediaStreams() ?? [], show.CommunityRating, show.CriticRating, hits, config);
+
+    /// <summary>
     /// Builds the built-in badges from raw item data (testable without a library item).
     /// </summary>
     /// <param name="path">Media path.</param>

@@ -16,6 +16,8 @@ Updates show up in Jellyfin's plugin page like any other plugin.
 
 ## How it works
 
+- Movies and TV shows (show posters) are badged. Each show uses its most typical recent episode for resolution, HDR, audio and source; ratings come from the show. TV can be switched off in settings.
+
 - The original poster is backed up once. Every render starts from the backup, so badges never stack.
 - Only new or changed movies get redrawn. Changes include new media, a quality upgrade (e.g. 1080p → 4K, even if the file name changes), a changed template, or a poster replaced by a metadata refresh, which becomes the new original.
 - Overlaid posters carry a hidden marker. If Jellyfin reuses one for another item (e.g. an upgraded file re-using `poster.jpg`), the plugin draws from the clean backup, so badges never stack.

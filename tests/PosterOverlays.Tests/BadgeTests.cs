@@ -44,6 +44,25 @@ public class BadgeTests
     public void Sources(string path, string expected) => Assert.Equal(expected, BadgeInfo.Source(path));
 
     [Fact]
+    public void RepresentativeIsMostCommonNewestOnTie()
+    {
+        Assert.Equal(1, BadgeInfo.MostCommonIndex(["4k|dv", "1080|sdr", "1080|sdr", "4k|dv", "1080|sdr"]));  // most common, first seen
+        Assert.Equal(0, BadgeInfo.MostCommonIndex(["4k", "1080", "4k", "1080"]));   // tie -> newest (first)
+        Assert.Equal(-1, BadgeInfo.MostCommonIndex([]));
+    }
+
+    [Fact]
+    public void ShowsGetNoEditionButKeepAudioAndRatings()
+    {
+        var cfg = new PluginConfiguration();
+        var b = ExtraBadges.For(null, [Audio("eac3", 6)], 8.1f, 91f, [], cfg);
+        Assert.DoesNotContain(b, x => x.Kind == ExtraBadgeKind.Edition);
+        Assert.Contains(b, x => x.Kind == ExtraBadgeKind.Audio && x.Detail == "Digital+ 5.1");
+        Assert.Contains(b, x => x.Kind == ExtraBadgeKind.Imdb && x.Text == "8.1");
+        Assert.Contains(b, x => x.Kind == ExtraBadgeKind.RottenTomatoes && x.Text == "91%");
+    }
+
+    [Fact]
     public void AudioLabels()
     {
         Assert.Equal(("DOLBY", "TrueHD 7.1"), BadgeInfo.Audio([Audio("truehd", 8)]));

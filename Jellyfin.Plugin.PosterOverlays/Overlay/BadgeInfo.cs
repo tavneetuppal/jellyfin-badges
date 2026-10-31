@@ -145,6 +145,27 @@ public static partial class BadgeInfo
     }
 
     /// <summary>
+    /// Index of the item whose key is the most common; ties go to the earliest item.
+    /// Used to pick a show's representative episode (items ordered newest first).
+    /// </summary>
+    /// <param name="keys">One key per item.</param>
+    /// <returns>Index, or -1 for an empty list.</returns>
+    public static int MostCommonIndex(IReadOnlyList<string> keys)
+    {
+        var counts = keys.GroupBy(k => k).ToDictionary(g => g.Key, g => g.Count());
+        var best = -1;
+        for (var i = 0; i < keys.Count; i++)
+        {
+            if (best < 0 || counts[keys[i]] > counts[keys[best]])
+            {
+                best = i;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
     /// Formats a community rating (0-10) for display, e.g. "7.8".
     /// </summary>
     /// <param name="rating">Rating.</param>

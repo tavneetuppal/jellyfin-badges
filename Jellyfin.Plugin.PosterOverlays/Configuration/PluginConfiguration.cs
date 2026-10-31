@@ -28,6 +28,11 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool ShowAudioLabel { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether TV show posters get badges too (from a representative episode).
+    /// </summary>
+    public bool IncludeTvShows { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the edition (Director's Cut, Extended...) from the file name is shown under the top row.
     /// </summary>
     public bool ShowEdition { get; set; } = true;

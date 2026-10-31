@@ -26,15 +26,23 @@ public static class MediaFacts
     /// </summary>
     /// <param name="item">Library item.</param>
     /// <returns>Field name to value.</returns>
-    public static Dictionary<string, object> For(BaseItem item)
+    public static Dictionary<string, object> For(BaseItem item) => For(item, item);
+
+    /// <summary>
+    /// Builds the fact table from one item's media (a movie, or a show's representative episode) and another's metadata.
+    /// </summary>
+    /// <param name="media">Item whose streams and file path are used; null when a show has no episode files.</param>
+    /// <param name="display">Item whose title and year are used (the movie or the show).</param>
+    /// <returns>Field name to value.</returns>
+    public static Dictionary<string, object> For(BaseItem? media, BaseItem display)
     {
-        var streams = item.GetMediaStreams();
+        var streams = media?.GetMediaStreams() ?? [];
         var video = streams.FirstOrDefault(s => s.Type == MediaStreamType.Video);
         var audios = streams.Where(s => s.Type == MediaStreamType.Audio).ToList();
         var audio = audios.FirstOrDefault(s => s.IsDefault) ?? audios.FirstOrDefault();
 
         var width = video?.Width ?? 0;
-        var res = width >= 3200 ? "4k" : width >= 1800 ? "1080" : width >= 1200 ? "720" : "sd";
+        var res = video is null ? string.Empty : width >= 3200 ? "4k" : width >= 1800 ? "1080" : width >= 1200 ? "720" : "sd";
         var range = video?.VideoRangeType ?? VideoRangeType.Unknown;
         var dv = range.ToString().StartsWith("DOVI", StringComparison.Ordinal) && range != VideoRangeType.DOVIInvalid;
 
@@ -51,10 +59,10 @@ public static class MediaFacts
             ["atmos"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DolbyAtmos),
             ["dtsX"] = audios.Any(a => a.AudioSpatialFormat == AudioSpatialFormat.DTSX),
             ["dtsHdMa"] = audios.Any(a => a.Profile?.Contains("DTS-HD MA", StringComparison.OrdinalIgnoreCase) == true),
-            ["source"] = BadgeInfo.Source(item.Path),
-            ["filePath"] = item.Path ?? string.Empty,
-            ["title"] = item.Name ?? string.Empty,
-            ["year"] = item.ProductionYear ?? 0,
+            ["source"] = BadgeInfo.Source(media?.Path),
+            ["filePath"] = media?.Path ?? display.Path ?? string.Empty,
+            ["title"] = display.Name ?? string.Empty,
+            ["year"] = display.ProductionYear ?? 0,
         };
     }
 

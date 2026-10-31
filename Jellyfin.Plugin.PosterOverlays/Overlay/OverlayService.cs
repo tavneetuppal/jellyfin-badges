@@ -62,25 +62,27 @@ public class OverlayService
     public List<OverlayTemplate> LoadTemplates() => OverlayTemplate.LoadAll(TemplatesPath, _logger);
 
     /// <summary>
-    /// Applies matching templates to every movie poster.
+    /// Applies matching templates to every movie (and TV show) poster.
     /// </summary>
     /// <param name="progress">Progress (0-100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task.</returns>
     public Task ApplyAllAsync(IProgress<double> progress, CancellationToken cancellationToken)
-        => ApplyAsync(Movies(), progress, true, cancellationToken);
+        => ApplyAsync(Items(), progress, true, cancellationToken);
 
     /// <summary>
-    /// Applies matching templates to specific items (new or updated movies).
+    /// Applies matching templates to specific items (new or updated movies and shows).
     /// </summary>
-    /// <param name="itemIds">Item ids.</param>
+    /// <param name="itemIds">Movie or show ids.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Task.</returns>
     public Task ApplyItemsAsync(IEnumerable<Guid> itemIds, CancellationToken cancellationToken)
     {
+        var tv = Plugin.Instance!.Configuration.IncludeTvShows;
         var items = itemIds
             .Select(id => _libraryManager.GetItemById(id))
-            .Where(i => i is not null && i.GetBaseItemKind() == BaseItemKind.Movie && !i.IsVirtualItem)
+            .Where(i => i is not null && !i.IsVirtualItem
+                        && (i.GetBaseItemKind() == BaseItemKind.Movie || (tv && i.GetBaseItemKind() == BaseItemKind.Series)))
             .Select(i => i!)
             .ToList();
         return items.Count == 0 ? Task.CompletedTask : ApplyAsync(items, new Progress<double>(), false, cancellationToken);
@@ -198,9 +200,13 @@ public class OverlayService
         }
 
         var id = item.Id.ToString("N");
-        var facts = MediaFacts.For(item);
+        var isShow = item.GetBaseItemKind() == BaseItemKind.Series;
+        var media = isShow ? RepresentativeEpisode(item) : item;
+        var facts = MediaFacts.For(media, item);
         var hits = templates.Where(t => MediaFacts.Matches(t, facts, _logger)).ToList();
-        var extras = ExtraBadges.For(item, hits, Plugin.Instance!.Configuration);
+        var extras = isShow
+            ? ExtraBadges.ForShow(media, item, hits, Plugin.Instance!.Configuration)
+            : ExtraBadges.For(item, hits, Plugin.Instance!.Configuration);
         var nothingToDraw = hits.Count == 0 && extras.Count == 0;
         var signature = LayoutVersion + "|" + string.Join('|', hits.Select(t => t.Name + ":" + t.Hash).Concat(extras.Select(e => e.Key)));
 
@@ -268,12 +274,42 @@ public class OverlayService
         await item.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, ct).ConfigureAwait(false);
     }
 
-    private List<BaseItem> Movies() => _libraryManager.GetItemList(new InternalItemsQuery
+    private List<BaseItem> Items() => _libraryManager.GetItemList(new InternalItemsQuery
     {
-        IncludeItemTypes = [BaseItemKind.Movie],
+        IncludeItemTypes = Plugin.Instance!.Configuration.IncludeTvShows ? [BaseItemKind.Movie, BaseItemKind.Series] : [BaseItemKind.Movie],
         Recursive = true,
         IsVirtualItem = false,
     }).ToList();
+
+    /// <summary>
+    /// The episode that best represents a show's files: among its newest episodes, the most common combination of
+    /// resolution, Dolby Vision/HDR and audio (ties go to the newest). Its file name also feeds the source badges,
+    /// which works with Sonarr's quality names (WEBDL-1080p, Bluray-2160p...).
+    /// </summary>
+    private BaseItem? RepresentativeEpisode(BaseItem show)
+    {
+        const int Sample = 60;
+        var episodes = _libraryManager.GetItemList(new InternalItemsQuery
+            {
+                AncestorIds = [show.Id],
+                IncludeItemTypes = [BaseItemKind.Episode],
+                Recursive = true,
+                IsVirtualItem = false,
+            })
+            .Where(e => !string.IsNullOrEmpty(e.Path))
+            .OrderByDescending(e => e.ParentIndexNumber ?? 0)
+            .ThenByDescending(e => e.IndexNumber ?? 0)
+            .Take(Sample)
+            .ToList();
+        var keys = episodes.Select(e =>
+        {
+            var f = MediaFacts.For(e);
+            var audio = BadgeInfo.Audio(e.GetMediaStreams());
+            return $"{f["resolution"]}|{f["dolbyVision"]}|{f["hdr"]}|{f["atmos"]}|{audio?.Brand} {audio?.Detail}";
+        }).ToList();
+        var i = BadgeInfo.MostCommonIndex(keys);
+        return i < 0 ? null : episodes[i];
+    }
 
     private static string MimeFor(string file) => Path.GetExtension(file).ToLowerInvariant() switch
     {
