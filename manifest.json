@@ -5,7 +5,7 @@
     "description": "Burns quality badges (4K, Dolby Vision, HDR10, IMAX, Dolby Atmos, DTS) into movie posters using Agregarr overlay templates, so they show in every Jellyfin client. Originals are backed up and can be restored.",
     "overview": "Quality badges on movie posters, in every client",
     "owner": "tavneetuppal",
-    "category": "Metadata",
+    "category": "MoviesAndShows",
     "imageUrl": "",
     "versions": [
       {
