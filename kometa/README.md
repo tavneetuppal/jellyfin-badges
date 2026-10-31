@@ -45,7 +45,7 @@ The same badges as the Jellyfin plugin, built for Kometa (Plex). `python3 build.
 
 ## Notes
 
-- Kometa draws on a 1000×1500 poster, so the images are made at their final size.
+- Kometa draws on a 1000×1500 poster, so the images are made at their final size. `SCALE` in `build.py` sets the badge size (1.2 = 20% larger than the Agregarr design, the most that still fits 4K + Dolby Vision + IMAX across the top).
 - Top-row badges are all 304 wide, because Kometa queues place badges at fixed steps.
 - Atmos and DTS:X can only be read from the audio track title or the file name, because Plex doesn't report them as separate codecs. A TrueHD Atmos track whose name doesn't mention Atmos shows `DOLBY | TrueHD 7.1`.
 - The overlay file passes Kometa's own `overlay-schema.json`.

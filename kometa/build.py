@@ -25,7 +25,15 @@ LOGOS = HERE.parent / "Jellyfin.Plugin.PosterOverlays" / "Badges"
 BOLD, REGULAR = HERE / "fonts" / "Inter-Bold.ttf", HERE / "fonts" / "Inter-Regular.ttf"
 SS = 4                                                  # supersampling
 TILE = (0, 0, 0, 89)                                    # black at 35%, same as the other packs
-GAP, TILE_H, TOP_W = 9, 53, 304
+GAP, TILE_H, TOP_W = 9, 53, 304                        # design units (same as the Agregarr / Jellyfin designs)
+SCALE = 1.2                                             # badge size on the poster; 1.2 is the largest where
+                                                        # 4K + Dolby Vision + IMAX still fit across (982 of 1000 px)
+MARGIN = 11
+
+
+def px(v: float) -> int:
+    """Design units -> poster pixels."""
+    return round(v * SCALE)
 IMAGE_PATH = "config/badges/images"                     # where the images live inside the Kometa container
 
 # Regexes, case-insensitive. Source names follow Radarr quality names (Bluray-1080p, Remux-1080p, WEBDL-1080p ...).
@@ -50,7 +58,8 @@ def tile(w: int, h: int) -> Image.Image:
 
 
 def save(im: Image.Image, name: str) -> str:
-    im = im.resize((im.width // SS, im.height // SS), Image.LANCZOS)
+    # drawn at SS x design size; scaled straight to the final poster size
+    im = im.resize((round(im.width * SCALE / SS), round(im.height * SCALE / SS)), Image.LANCZOS)
     im.save(IMG / f"{name}.png", optimize=True)
     return f"{IMAGE_PATH}/{name}.png"
 
@@ -133,7 +142,8 @@ def main():
                   all_items, {"filepath.regex": r"(?i)\bimax\b"}, weight=100, **top)
 
     # Edition: under the top row. Known editions get an upper-case label; anything else shows Plex's edition text.
-    ed_pos = {"group": "badges_edition", "horizontal_align": "left", "vertical_align": "top", "horizontal_offset": 11, "vertical_offset": 68}
+    ed_pos = {"group": "badges_edition", "horizontal_align": "left", "vertical_align": "top",
+              "horizontal_offset": MARGIN, "vertical_offset": 6 + px(TILE_H) + GAP}
     editions = [("DIRECTOR'S CUT", r"director'?s"), ("EXTENDED EDITION", r"extended"), ("UNRATED", r"unrated"),
                 ("THEATRICAL CUT", r"theatrical"), ("ULTIMATE EDITION", r"ultimate"), ("SPECIAL EDITION", r"special"),
                 ("FINAL CUT", r"final[ ._-]?cut"), ("REMASTERED", r"remaster"), ("CRITERION", r"criterion"),
@@ -146,12 +156,12 @@ def main():
         image_overlay(key, file, all_items, {"edition.regex": f"(?i){rx}"}, weight=200 - 2 * i, **ed_pos)
         image_overlay(key + " (file name)", file, all_items, {"filepath.regex": f"(?i)\\{{edition-[^}}]*{rx}"}, weight=199 - 2 * i, **ed_pos)
     overlays["Badges Edition (other)"] = {
-        "overlay": {"name": "text(<<edition>>)", "font": "fonts/Inter-Bold.ttf", "font_size": 24, "font_color": "#FFFFFF",
-                    "back_color": "#00000059", "back_radius": 15, "back_padding": 10, "weight": 1, **ed_pos},
+        "overlay": {"name": "text(<<edition>>)", "font": "fonts/Inter-Bold.ttf", "font_size": px(24), "font_color": "#FFFFFF",
+                    "back_color": "#00000059", "back_radius": px(15), "back_padding": px(10), "weight": 1, **ed_pos},
         "plex_all": True, "filters": {"has_edition": True, "edition.regex": r"(?i)^(?!.*\bimax\b)"}}  # IMAX has its own badge
 
     # Audio: one badge bottom-left, best match wins (group). Logos first, then codec labels from Plex's stream info.
-    au_pos = {"group": "badges_audio", "horizontal_align": "left", "vertical_align": "bottom", "horizontal_offset": 11, "vertical_offset": 17}
+    au_pos = {"group": "badges_audio", "horizontal_align": "left", "vertical_align": "bottom", "horizontal_offset": MARGIN, "vertical_offset": 17}
     def either(key, file, branches, weight):
         """One overlay per alternative, same image, consecutive weights: the group draws it if any alternative matches."""
         for n, (suffix, flt) in enumerate(branches):
@@ -178,12 +188,12 @@ def main():
                           {"audio_codec.is": codec, **ch[c]}, weight=100 - i * 10 - j, **au_pos)
 
     # Ratings: bottom-right queue; Rotten Tomatoes takes the corner, IMDb sits left of it (or in the corner if RT is missing).
-    rating_style = {"font": "fonts/Inter-Bold.ttf", "font_size": 30, "font_color": "#FFFFFF", "back_color": "#00000059",
-                    "back_radius": 15, "back_width": 160, "back_height": TILE_H, "addon_position": "left", "addon_offset": 10,
-                    "queue": "badges_ratings"}
+    rating_style = {"font": "fonts/Inter-Bold.ttf", "font_size": px(30), "font_color": "#FFFFFF", "back_color": "#00000059",
+                    "back_radius": px(15), "back_width": px(160), "back_height": px(TILE_H), "addon_position": "left",
+                    "addon_offset": px(10), "queue": "badges_ratings"}
     for name, svg, h in [("imdb", "imdb.svg", 30), ("rt_fresh", "rt_fresh.svg", 36), ("rt_rotten", "rt_rotten.svg", 36)]:
         im = logo_only(svg, h)
-        im.resize((round(im.width / SS), h), Image.LANCZOS).save(IMG / f"Badges_{name}.png", optimize=True)
+        im.resize((round(im.width * SCALE / SS), px(h)), Image.LANCZOS).save(IMG / f"Badges_{name}.png", optimize=True)
     overlays["Badges IMDb"] = {"overlay": {"name": "text(<<plex_imdb_rating>>)", "file": f"{IMAGE_PATH}/Badges_imdb.png", "weight": 10, **rating_style},
                                "plex_all": True, "value_filter": {"plex_imdb_rating.gt": 0}}
     overlays["Badges RT Fresh"] = {"overlay": {"name": "text(<<plex_tomatoes_rating%>>%)", "file": f"{IMAGE_PATH}/Badges_rt_fresh.png", "weight": 20, **rating_style},
@@ -196,12 +206,12 @@ def main():
         "queues": {
             "badges_top": {"settings": {"overlay_limit": 3, "dynamic_position": {
                 "initial_horizontal_align": "left", "initial_vertical_align": "top",
-                "initial_horizontal_offset": 11, "initial_vertical_offset": 6,
-                "horizontal_spacing": TOP_W + GAP, "vertical_spacing": 0}}},
+                "initial_horizontal_offset": MARGIN, "initial_vertical_offset": 6,
+                "horizontal_spacing": px(TOP_W) + GAP, "vertical_spacing": 0}}},
             "badges_ratings": {"settings": {"overlay_limit": 2, "dynamic_position": {
                 "initial_horizontal_align": "right", "initial_vertical_align": "bottom",
-                "initial_horizontal_offset": 11, "initial_vertical_offset": 17,
-                "horizontal_spacing": 160 + GAP, "vertical_spacing": 0}}},
+                "initial_horizontal_offset": MARGIN, "initial_vertical_offset": 17,
+                "horizontal_spacing": px(160) + GAP, "vertical_spacing": 0}}},
         },
         "overlays": overlays,
     }

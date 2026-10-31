@@ -8,7 +8,7 @@ queues:
         initial_vertical_align: top
         initial_horizontal_offset: 11
         initial_vertical_offset: 6
-        horizontal_spacing: 313
+        horizontal_spacing: 374
         vertical_spacing: 0
   badges_ratings:
     settings:
@@ -18,7 +18,7 @@ queues:
         initial_vertical_align: bottom
         initial_horizontal_offset: 11
         initial_vertical_offset: 17
-        horizontal_spacing: 169
+        horizontal_spacing: 201
         vertical_spacing: 0
 overlays:
   Badges 4K:
@@ -106,7 +106,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)director'?s
@@ -119,7 +119,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*director'?s
@@ -132,7 +132,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)extended
@@ -145,7 +145,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*extended
@@ -158,7 +158,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)unrated
@@ -171,7 +171,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*unrated
@@ -184,7 +184,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)theatrical
@@ -197,7 +197,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*theatrical
@@ -210,7 +210,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)ultimate
@@ -223,7 +223,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*ultimate
@@ -236,7 +236,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)special
@@ -249,7 +249,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*special
@@ -262,7 +262,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)final[ ._-]?cut
@@ -275,7 +275,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*final[ ._-]?cut
@@ -288,7 +288,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)remaster
@@ -301,7 +301,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*remaster
@@ -314,7 +314,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)criterion
@@ -327,7 +327,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*criterion
@@ -340,7 +340,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)anniversary
@@ -353,7 +353,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*anniversary
@@ -366,7 +366,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       edition.regex: (?i)collector'?s
@@ -379,7 +379,7 @@ overlays:
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       filepath.regex: (?i)\{edition-[^}]*collector'?s
@@ -387,17 +387,17 @@ overlays:
     overlay:
       name: text(<<edition>>)
       font: fonts/Inter-Bold.ttf
-      font_size: 24
+      font_size: 29
       font_color: '#FFFFFF'
       back_color: '#00000059'
-      back_radius: 15
-      back_padding: 10
+      back_radius: 18
+      back_padding: 12
       weight: 1
       group: badges_edition
       horizontal_align: left
       vertical_align: top
       horizontal_offset: 11
-      vertical_offset: 68
+      vertical_offset: 79
     plex_all: true
     filters:
       has_edition: true
@@ -702,14 +702,14 @@ overlays:
       file: config/badges/images/Badges_imdb.png
       weight: 10
       font: fonts/Inter-Bold.ttf
-      font_size: 30
+      font_size: 36
       font_color: '#FFFFFF'
       back_color: '#00000059'
-      back_radius: 15
-      back_width: 160
-      back_height: 53
+      back_radius: 18
+      back_width: 192
+      back_height: 64
       addon_position: left
-      addon_offset: 10
+      addon_offset: 12
       queue: badges_ratings
     plex_all: true
     value_filter:
@@ -720,14 +720,14 @@ overlays:
       file: config/badges/images/Badges_rt_fresh.png
       weight: 20
       font: fonts/Inter-Bold.ttf
-      font_size: 30
+      font_size: 36
       font_color: '#FFFFFF'
       back_color: '#00000059'
-      back_radius: 15
-      back_width: 160
-      back_height: 53
+      back_radius: 18
+      back_width: 192
+      back_height: 64
       addon_position: left
-      addon_offset: 10
+      addon_offset: 12
       queue: badges_ratings
     plex_all: true
     value_filter:
@@ -738,14 +738,14 @@ overlays:
       file: config/badges/images/Badges_rt_rotten.png
       weight: 20
       font: fonts/Inter-Bold.ttf
-      font_size: 30
+      font_size: 36
       font_color: '#FFFFFF'
       back_color: '#00000059'
-      back_radius: 15
-      back_width: 160
-      back_height: 53
+      back_radius: 18
+      back_width: 192
+      back_height: 64
       addon_position: left
-      addon_offset: 10
+      addon_offset: 12
       queue: badges_ratings
     plex_all: true
     value_filter:
