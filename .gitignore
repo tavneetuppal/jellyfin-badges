@@ -1,6 +1,7 @@
-config.env
-data/
+bin/
+obj/
+out/
 *.zip
-!templates/*.zip
-demo.jpg
-__pycache__/
+!Jellyfin.Plugin.PosterOverlays/Templates/*.zip
+legacy/config.env
+legacy/data/

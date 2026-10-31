@@ -1,0 +1,59 @@
+name: Release
+
+# Push a tag like v1.0.1 to build the plugin, publish a GitHub release and add it to manifest.json.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Version from tag
+        id: v
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          IFS=. read -r a b c d <<< "$tag"
+          echo "version=${a:-0}.${b:-0}.${c:-0}.${d:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Test
+        run: dotnet test tests/PosterOverlays.Tests -c Release
+
+      - name: Build
+        run: |
+          dotnet publish Jellyfin.Plugin.PosterOverlays -c Release -o out \
+            -p:Version=${{ steps.v.outputs.version }} \
+            -p:AssemblyVersion=${{ steps.v.outputs.version }} \
+            -p:FileVersion=${{ steps.v.outputs.version }}
+          zip -j "poster-overlays_${{ steps.v.outputs.version }}.zip" out/Jellyfin.Plugin.PosterOverlays.dll
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" "poster-overlays_${{ steps.v.outputs.version }}.zip" \
+            --title "$GITHUB_REF_NAME" --generate-notes
+
+      - name: Update manifest.json
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          ZIP: poster-overlays_${{ steps.v.outputs.version }}.zip
+        run: |
+          python3 .github/update_manifest.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add manifest.json
+          git commit -m "manifest: add $VERSION"
+          git push origin main

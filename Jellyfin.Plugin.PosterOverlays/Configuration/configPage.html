@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Poster Overlays</title>
+</head>
+<body>
+    <div id="PosterOverlaysConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="PosterOverlaysConfigForm">
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Poster Overlays</h2>
+                        <p>Badges are drawn into the poster image itself, so they show in every app. Originals are backed up and can be put back with the
+                            <b>Restore original posters</b> task (Dashboard &rarr; Scheduled Tasks).</p>
+                    </div>
+
+                    <div class="verticalSection">
+                        <h3 class="sectionTitle">Templates</h3>
+                        <div class="fieldDescription">Untick a template to stop applying it. Changes take effect on the next run of <b>Apply poster overlays</b>.</div>
+                        <div id="templateList" style="margin-top:1em">Loading&hellip;</div>
+                        <div class="fieldDescription" style="margin-top:1em">
+                            To add or replace templates, export them from Agregarr and copy the <code>.zip</code> files into:<br>
+                            <code id="customFolder"></code><br>
+                            A template with the same name as a built-in one replaces it.
+                        </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="OnlyTitlesContaining">Test mode: only titles containing</label>
+                        <input id="OnlyTitlesContaining" name="OnlyTitlesContaining" type="text" is="emby-input" />
+                        <div class="fieldDescription">Try it on a few movies first (e.g. <code>Avengers</code>). Leave empty to process the whole library.</div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="JpegQuality">JPEG quality</label>
+                        <input id="JpegQuality" name="JpegQuality" type="number" is="emby-input" min="50" max="100" />
+                        <div class="fieldDescription">Quality of the saved posters (50-100). Default 92.</div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '206aa7e3-be50-4e58-b06c-5acbd8778d94';
+                var page = document.querySelector('#PosterOverlaysConfigPage');
+
+                function escapeHtml(s) {
+                    var d = document.createElement('div');
+                    d.textContent = s == null ? '' : String(s);
+                    return d.innerHTML;
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    Promise.all([
+                        ApiClient.getPluginConfiguration(pluginId),
+                        ApiClient.getJSON(ApiClient.getUrl('PosterOverlays/Templates'))
+                    ]).then(function (r) {
+                        var config = r[0], info = r[1];
+                        var disabled = (config.DisabledTemplates || []).map(function (n) { return n.toLowerCase(); });
+                        page.querySelector('#JpegQuality').value = config.JpegQuality || 92;
+                        page.querySelector('#OnlyTitlesContaining').value = config.OnlyTitlesContaining || '';
+                        page.querySelector('#customFolder').textContent = info.CustomFolder;
+                        page.querySelector('#templateList').innerHTML = info.Templates.map(function (t) {
+                            var checked = disabled.indexOf(t.Name.toLowerCase()) === -1 ? ' checked' : '';
+                            return '<div class="checkboxContainer checkboxContainer-withDescription">' +
+                                '<label class="emby-checkbox-label"><input type="checkbox" is="emby-checkbox" class="chkTemplate" data-name="' + escapeHtml(t.Name) + '"' + checked + ' />' +
+                                '<span>' + escapeHtml(t.Name) + ' <small style="opacity:.6">(' + escapeHtml(t.Source) + ')</small></span></label>' +
+                                (t.Description ? '<div class="fieldDescription checkboxFieldDescription">' + escapeHtml(t.Description) + '</div>' : '') +
+                                '</div>';
+                        }).join('') || 'No templates found.';
+                        Dashboard.hideLoadingMsg();
+                    }, function () {
+                        page.querySelector('#templateList').textContent = 'Could not load templates. Check the Jellyfin log.';
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                page.querySelector('#PosterOverlaysConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        config.DisabledTemplates = Array.prototype.slice.call(page.querySelectorAll('.chkTemplate'))
+                            .filter(function (c) { return !c.checked; })
+                            .map(function (c) { return c.getAttribute('data-name'); });
+                        var q = parseInt(page.querySelector('#JpegQuality').value, 10);
+                        config.JpegQuality = isNaN(q) ? 92 : Math.min(100, Math.max(50, q));
+                        config.OnlyTitlesContaining = page.querySelector('#OnlyTitlesContaining').value.trim();
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>
