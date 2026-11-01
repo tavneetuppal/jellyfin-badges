@@ -30,7 +30,7 @@ Updates show up in Jellyfin's plugin page like any other plugin.
 
 Badges are packed left within the top and bottom rows in their designed order: resolution, then Dolby Vision/HDR, then IMAX. A badge that doesn't apply leaves no gap.
 
-Resolution badges: 4K for 2160p; Blu-ray for 1080p from a Blu-ray source (`BluRay`, `Remux`, `BDRip` in the file name); 1080P FULL HD for other 1080p (WEB-DL, WEBRip, HDTV, unknown); 720P HD; 480P SD below 720p.
+Resolution badges (1080P FULL HD, 720P HD and 480P SD are bold white-block logos drawn by `tools/resolution_logos.py`): 4K for 2160p; Blu-ray for 1080p from a Blu-ray source (`BluRay`, `Remux`, `BDRip` in the file name); 1080P FULL HD for other 1080p (WEB-DL, WEBRip, HDTV, unknown); 720P HD; 480P SD below 720p.
 
 
 Built-in templates are in `Jellyfin.Plugin.PosterOverlays/Templates/`. To add one without a new release, export it from Agregarr and drop the `.zip` into `PosterOverlays/templates/`. A custom template replaces a built-in one with the same name.
