@@ -9,6 +9,14 @@
     "imageUrl": "",
     "versions": [
       {
+        "version": "1.6.0.0",
+        "changelog": "Bold-block 1080P FULL HD / 720P HD / 480P SD badges, easier to read on TV",
+        "targetAbi": "12.4.0.0",
+        "sourceUrl": "https://github.com/tavneetuppal/jellyfin-badges/releases/download/v1.6.0.0/poster-overlays_1.6.0.0.zip",
+        "checksum": "52372492127609b18ca84ac60c77c995",
+        "timestamp": "2026-11-01T14:40:11Z"
+      },
+      {
         "version": "1.5.0.0",
         "changelog": "Badges 20% larger, no IMAX edition label; Kometa: no collections in 4K libraries",
         "targetAbi": "12.4.0.0",
